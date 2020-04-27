@@ -14,7 +14,7 @@ The code was developed on
 We use the BigGAN port from HuggingFaces [github](https://github.com/huggingface/pytorch-pretrained-BigGAN)
 
 ## Setup
-<b> (1) First install the pytorch dependencies </b>
+<b> (1) First install the python dependencies </b>
 ```bash
 pip install -r requirements.txt
 ```
