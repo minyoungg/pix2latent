@@ -9,7 +9,7 @@
 The code was developed on
 - Ubuntu 18.04
 - Python 3.7
-- Pytorch 1.2.0
+- PyTorch 1.2.0
 
 We use the BigGAN port from HuggingFaces [github](https://github.com/huggingface/pytorch-pretrained-BigGAN)
 
