@@ -1,0 +1,312 @@
+<html>
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+
+  <!--
+  <script src="./resources/jsapi" type="text/javascript"></script>
+  <script type="text/javascript" async>google.load("jquery", "1.3.2");</script>
+ -->
+
+
+<style type="text/css">
+  @font-face {
+   font-family: 'Avenir Next';
+   src: url("./fonts/Metropolis-ExtraLight.otf"); /* File to be stored at your site */
+   }
+
+  body {
+    font-family: "Avenir Next", "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+    font-weight:300;
+    font-size:18px;
+    margin-left: auto;
+    margin-right: auto;
+    width: 1100px;
+  }
+  h1 {
+    font-weight:300;
+  }
+  h2 {
+    font-weight:300;
+  }
+
+  p {
+    font-weight:300;
+    line-height: 1.4;
+  }
+
+
+  .disclaimerbox {
+    background-color: #eee;
+    border: 1px solid #eeeeee;
+    border-radius: 10px ;
+    -moz-border-radius: 10px ;
+    -webkit-border-radius: 10px ;
+    padding: 20px;
+  }
+
+  video.header-vid {
+    height: 140px;
+    border: 1px solid black;
+    border-radius: 10px ;
+    -moz-border-radius: 10px ;
+    -webkit-border-radius: 10px ;
+  }
+
+  img.header-img {
+    height: 140px;
+    border: 1px solid black;
+    border-radius: 10px ;
+    -moz-border-radius: 10px ;
+    -webkit-border-radius: 10px ;
+  }
+
+  img.rounded {
+    border: 0px solid #eeeeee;
+    border-radius: 10px ;
+    -moz-border-radius: 10px ;
+    -webkit-border-radius: 10px ;
+
+  }
+
+  a:link,a:visited
+  {
+    color: #1367a7;
+    text-decoration: none;
+  }
+  a:hover {
+    color: #208799;
+  }
+
+  td.dl-link {
+    height: 160px;
+    text-align: center;
+    font-size: 22px;
+  }
+
+  .layered-paper-big { /* modified from: http://css-tricks.com/snippets/css/layered-paper/ */
+    box-shadow:
+            0px 0px 1px 1px rgba(0,0,0,0.35), /* The top layer shadow */
+            5px 5px 0 0px #fff, /* The second layer */
+            5px 5px 1px 1px rgba(0,0,0,0.35), /* The second layer shadow */
+            10px 10px 0 0px #fff, /* The third layer */
+            10px 10px 1px 1px rgba(0,0,0,0.35), /* The third layer shadow */
+            15px 15px 0 0px #fff, /* The fourth layer */
+            15px 15px 1px 1px rgba(0,0,0,0.35), /* The fourth layer shadow */
+            20px 20px 0 0px #fff, /* The fifth layer */
+            20px 20px 1px 1px rgba(0,0,0,0.35), /* The fifth layer shadow */
+            25px 25px 0 0px #fff, /* The fifth layer */
+            25px 25px 1px 1px rgba(0,0,0,0.35); /* The fifth layer shadow */
+    margin-left: 10px;
+    margin-right: 45px;
+  }
+
+
+  .layered-paper { /* modified from: http://css-tricks.com/snippets/css/layered-paper/ */
+    box-shadow:
+            0px 0px 1px 1px rgba(0,0,0,0.35), /* The top layer shadow */
+            5px 5px 0 0px #fff, /* The second layer */
+            5px 5px 1px 1px rgba(0,0,0,0.35), /* The second layer shadow */
+            10px 10px 0 0px #fff, /* The third layer */
+            10px 10px 1px 1px rgba(0,0,0,0.35); /* The third layer shadow */
+    margin-top: 5px;
+    margin-left: 10px;
+    margin-right: 30px;
+    margin-bottom: 5px;
+  }
+
+  .vert-cent {
+    position: relative;
+      top: 50%;
+      transform: translateY(-50%);
+  }
+
+  hr
+  {
+    border: 0;
+    height: 1px;
+    background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+  }
+</style>
+
+
+
+    <title>Aligning and Projecting Images toClass-conditional Generative Networks</title>
+    <meta property="og:image" content="https://minyoungg.github.io/selfconsistency/images/teaser.png">
+    <meta property="og:title" content="Aligning and Projecting Images toClass-conditional Generative Networks">
+    <meta property='og:video' content='https://www.youtube.com/v/lmOejdhSio0'/>
+  </head>
+
+  <body>
+        <br>
+          <center>
+            <span style="font-size:48px">Aligning and Projecting Images to Class-conditional Generative Networks</span><br><br><br>
+          </center>
+          <table align="center" width="1200px">
+            <tbody><tr>
+                    <td align="center" width="205px">
+              <center>
+                <span style="font-size:20px"><a href="http://minyounghuh.com">Minyoung Huh</a><sup>12</sup></span>
+                </center>
+                </td>
+                    <td align="center" width="175px">
+              <center>
+                <span style="font-size:20px"><a href="http://andrewhliu.github.io">Richard Zhang</a><sup>2</sup></span>
+                </center>
+                </td>
+                    <td align="center" width="175px">
+              <center>
+                <span style="font-size:20px"><a href="http://andrewowens.com">Jun-Yan Zhu</a><sup>2</sup></span>
+                </center>
+                </td>
+                    <td align="center" width="175px">
+              <center>
+                <span style="font-size:20px"><a href="http://andrewowens.com">Sylvain Paris</a><sup>2</sup></span>
+                </center>
+                </td>
+                    <td align="center" width="175px">
+              <center>
+                <span style="font-size:20px"><a href="http://andrewowens.com">Aaron Hertzmann</a><sup>2</sup></span>
+                </center>
+                </td>
+                    <td align="center" width="175px">
+            </tr>
+        </tbody></table>
+
+          <table align="center" width="700px">
+            <tbody><tr>
+                    <td align="center" width="100px">
+              <center>
+                    <span style="font-size:20px"></span>
+                </center>
+                </td>
+                    <td align="center" width="250px">
+              <center>
+                    <span style="font-size:20px"><sup>1</sup>MIT CSAIL</span>
+                </center>
+                </td>
+                    <td align="center" width="250px">
+              <center>
+                    <span style="font-size:20px"><sup>2</sup>Adobe Research</span>
+                </center>
+                </td>
+                    <td align="center" width="100px">
+              <center>
+                    <span style="font-size:20px"></span>
+                </center>
+                </td>
+        </tr></tbody></table>
+          <table align="center" width="700px">
+            <tbody><tr>
+              <br>
+              <td align="center" width="200px">
+                <center>
+                  <br>
+                  <span style="font-size:20px">Code
+                    <a href="https://github.com/minyoungg/selfconsistency"> [GitHub]</a>
+                  </span>
+                </center>
+              </td>
+
+              <td align="center" width="200px">
+                <center>
+                  <br>
+                  <span style="font-size:20px">
+                    arXiv preprint <a href="https://arxiv.org/pdf/1805.04096.pdf"> [Paper]</a>
+                  </span>
+                </center>
+              </td>
+
+            </tr></tbody>
+          </table>
+
+        <br><hr><br>
+        <table align="center" width="1100px">
+          <tbody><tr>
+                  <td width="400px">
+            <center>
+                      <img class="rounded" src="./images/model.png" width="1100px">
+                      <br>
+          </center>
+                  </td>
+                  </tr>
+                  </tbody></table>
+
+        <br>
+      <hr>
+        <br>
+        <center>
+          <h2>
+            Abstract
+          </h2>
+        </center>
+        <br>
+        <p>
+        <left>
+          We present a method for projecting an input image into the space of a class-conditional generative neural network. We propose a method that optimizes for transformation to counteract the model biases in a generative neural networks. Specifically, we demonstrate that one can solve for image translation and scale during the projection optimization to address the object-center bias of a Generative Adversarial Network. This projection process poses a difficult optimization problem, and purely gradient-based optimizations fail to find good solutions. We describe a hybrid optimization strategy that finds good projections by estimating transformations and class parameters. We show the effectiveness of our method on real images and further demonstrate how the corresponding projections lead to better edit-ability of these images.<br>
+        </left>
+      </p>
+      <br><br>
+      <hr>
+      <br>
+      <center>
+        <h2>
+          Paper
+        </h2>
+      </center>
+      <table align="center" width="800" px="">
+          <tbody><tr>
+          <td><a href="https://arxiv.org/pdf/1805.04096.pdf"><img class="layered-paper-big" style="height:175px" src="./images/first_page.png"></a></td>
+          <td><span style="font-size:12pt">M. Huh, R. Zhang, JY. Zhu, S. Paris, A. Hertzmann,</span><br>
+          <b><span style="font-size:12pt">Aligning and Projecting Images to <br> Class-conditional Generative Networks</span></b>
+          <br><span style="font-size:12pt">In arXiv preprint, 2020 (<a href="https://arxiv.org/pdf/1805.04096.pdf">arXiv</a>).</span>
+          </td>
+
+          <br>
+          <table align="center" width="600px">
+            <tbody>
+              <tr>
+                <td>
+                  <center>
+                    <span style="font-size:22px">
+                      <a href="./cite.txt" target="_blank">[Bibtex]</a>
+                    </span>
+                  </center>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+      <br><br>
+      <hr>
+      <br>
+
+
+      <table align="center" width="1100px"><tbody>
+        <tr><td width="400px">
+          <left>
+            <center>
+              <h2>
+                Acknowledgements
+              </h2>
+            </center>
+            We would like to thank Phillip Isola and David Bau for helpful discussions.
+            <br> <br>
+          <a href="https://richzhang.github.io/colorization/">Website template from Colorful Colorization</a>.
+        </left>
+      </td></tr>
+    </tbody></table>
+
+    <br><br>
+
+      <!-- Global site tag (gtag.js) - Google Analytics -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-70157890-3"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'UA-70157890-3');
+  </script>
+
+
+</body></html>
