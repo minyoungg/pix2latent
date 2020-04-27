@@ -1,0 +1,10 @@
+*.pyc
+*.jpg
+*.png
+*.mp4
+*.ckpt
+/runs
+/nets/weights/
+__pycache__/
+/PerceptualSimilarity
+.ipynb_checkpoints/
