@@ -1,5 +1,5 @@
-# GAN-Projection
-**Aligning and Projecting Images to Class-conditional Generative Networks**  
+# GAN-Transform-and-Project
+**Transforming and Projecting Images to Class-conditional Generative Networks**  
 [Minyoung Huh](http://minyounghuh.com/) &nbsp; [Richard Zhang](https://richzhang.github.io/) &nbsp; [Jun-Yan Zhu](https://people.csail.mit.edu/junyanz/) &nbsp; [Sylvain Paris](http://people.csail.mit.edu/sparis/) &nbsp; [Aaron Hertzmann](https://www.dgp.toronto.edu/~hertzman/)  
 MIT CSAIL &nbsp; Adobe Research  
 [[Paper]]() &nbsp; [[Project Page]]()  
@@ -62,7 +62,7 @@ We support simple spatial affine transformation and various color transformation
 If you found our work useful please cite using
 ```
 @article{huh2020ganprojection,
-    title = {Aligning and Projecting Images to Class-conditional Generative Networks}
+    title = {Transforming and Projecting Images to Class-conditional Generative Networks}
     author = {Huh, Minyoung and Zhang, Richard and Zhu, Jun-Yan
               and Paris, Sylvain and Hertzmann, Aaron},
     booktitle={arXiv preprint arXiv},
