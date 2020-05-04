@@ -85,11 +85,11 @@ class BaseCMAOptimizer():
     def setup_cma(self, cma_dim=128, cma_init=None):
         """
         Args
-            cma_z_dim
+            cma_dim
                 Dimension of the CMA optimizer
-            cma_z_init
-                cma_z_init can be a list or a tuple. If tuple (mu, sigma).
-                If cma_z_init is only mu, sigma is set to 1.0
+            cma_init
+                cma_init can be a list or a tuple. If tuple (mu, sigma).
+                If cma_init is only mu, sigma is set to 1.0
         """
         if cma_init:
             if type(cma_init) == tuple:
@@ -139,11 +139,24 @@ class BaseCMAOptimizer():
 
 
 class GradientOptimizer(BaseOptimizer):
+    """
+    Basic gradient optimizer. Compatible with any gradient-based optimizer.
+    The optimiation method defined in variable_manager is used.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         return
 
     def optimize(self, var_manager, grad_steps, pbar=None):
+        """
+        Args
+            var_manager:
+                variable manager for variable creation.
+            grad_steps:
+                number of gradient descent updates.
+            pbar:
+                progress bar such as tqdm or st.progress
+        """
         self.losses, self.outs = [], []
 
         variables = var_manager.init()
@@ -166,13 +179,28 @@ class GradientOptimizer(BaseOptimizer):
 
 
 class CMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
+    """
+    CMA optimizer.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         return
 
     def optimize(self, var_manager, meta_steps, grad_steps=0, cma_dim=128,
                  cma_init=None, pbar=None):
-
+        """
+        Args
+            var_manager:
+                variable manager for variable creation.
+            grad_steps:
+                number of gradient descent updates.
+            meta_steps:
+                number of CMA updates
+            grad_steps:
+                number of gradient updates
+            pbar:
+                progress bar such as tqdm or st.progress
+        """
         self.setup_cma(cma_dim, cma_init)
         self.losses, self.outs, i = [], [], 0
         total_steps = meta_steps + grad_steps
