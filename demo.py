@@ -58,7 +58,7 @@ class TransformableBasinCMAProjection():
         TODO
             Support custom generative model.
         """
-        self.model = nn.DataParallel(BigGAN()).cuda().float().eval()
+        self.model = nn.DataParallel(BigGAN()).cuda().float().eval();
         self.orig_state_dict = self.model.state_dict()
         self.image_shape = image_shape
 

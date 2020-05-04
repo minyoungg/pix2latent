@@ -14,9 +14,9 @@ from misc import HiddenPrints
 class BigGAN(nn.Module):
     """
     Wrapper class for HuggingFaces BigGAN. Nothing new here, simplifies
-    optimizing continuous class vector.
+    optimizing for continuous class vector.
 
-    Supports data parllelization unlike before.
+    DataParallelizing this version runs slow.
     """
 
     def __init__(self):

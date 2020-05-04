@@ -13,9 +13,6 @@ from demo import TransformableBasinCMAProjection
 
 from im_utils import to_image, make_grid, to_tensor
 
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
 
 @st.cache()
 def load_image(im_path):
@@ -56,7 +53,8 @@ def load_demo():
 
 @st.cache(allow_output_mutation=True, suppress_st_warning=True)
 def run_optimization(im, c, num_seeds, max_batch_size, cma_steps, adam_steps,
-                     ft_adam_steps, transform_cma_steps, transform_adam_steps):
+                     ft_adam_steps, transform_cma_steps, transform_adam_steps,
+                     encoder_init=True):
     variables, outs, losses, transform_fn = \
         solver(im, c,
                num_seeds=num_seeds,
@@ -65,7 +63,7 @@ def run_optimization(im, c, num_seeds, max_batch_size, cma_steps, adam_steps,
                finetune_steps=ft_adam_steps,
                transform_cma_steps=transform_cma_steps,
                transform_adam_steps=transform_adam_steps,
-               encoder_init=True,
+               encoder_init=encoder_init,
                max_batch_size=max_batch_size,
                remove_cache=False,
                st_progress_bar=True)
@@ -111,7 +109,9 @@ def main():
                         unsafe_allow_html=True)
     im_view = st.sidebar.radio(
         'masking method', ('bbox', 'segmentation'))
+
     mask_overlay_im, mask, p_noun, d_noun, misc = detect(im, im_view)
+
     st.sidebar.image(mask_overlay_im)
     st.sidebar.markdown('<b>Detected class</b>: {}'.format(d_noun),
                         unsafe_allow_html=True)
@@ -187,6 +187,11 @@ def main():
         step=5,
     )
 
+    encoder_init = st.sidebar.checkbox(
+        'Encoder init',
+        value=True,
+    )
+
     start_optimization = st.sidebar.button('Optimize')
 
     if not start_optimization:
@@ -195,7 +200,8 @@ def main():
     variables, outs, losses, transform_fn = \
         run_optimization(im, selected_cls, num_seeds, max_batch_size,
                          cma_steps, adam_steps, ft_adam_steps,
-                         transform_cma_steps, transform_adam_steps)
+                         transform_cma_steps, transform_adam_steps,
+                         encoder_init)
 
     # Collage
     collage_results = to_image(make_grid(outs), cv2_format=False)
@@ -229,5 +235,6 @@ def main():
     return
 
 
-solver = load_demo()
-main()
+if __name__ == '__main__':
+    solver = load_demo()
+    main()
