@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 <b> (2) Clone LPIPS </b>  
 
-The code uses perceptual similarity loss. So clone the LPIPS repo into this directory.
+The code uses perceptual similarity loss. We need to clone the LPIPS repo into this directory.
 ```bash
 git clone https://github.com/richzhang/PerceptualSimilarity
 ```
@@ -30,7 +30,7 @@ The path should be in the following format ... or you can set the path manually 
 ./GAN-Transform-and-Project/PerceptualSimilarity
 ```
 
-<b> (3) Encoder weights </b>   
+<b> (3) Encoder weights (optional)</b>   
 The demo code uses encoder weights to speed up optimization.  
 Download the weights from [google drive](https://drive.google.com/drive/folders/1CyDQGBlduBP7lk3WiwazsEViT7VJRnE_?usp=sharing) and place it in the `nets/weights` sub-directory.  
 
@@ -40,24 +40,26 @@ The encoder weight should be in the following path
 ```
 
 ## Demo
+We provide several demos for our project. If you do not wish to use the encoder, disable them appropriately.
+
 <b> (a) Jupyter demo </b>  
-We provide a demo of our project in [example.ipynb](example.ipynb)
+A jupyter lab/notebook demo is available in [example.ipynb](example.ipynb)
 
 <b> (b) Command line </b>  
-To invert image using command line
+To run our code from command line
 ```bash
 CUDA_VISIBLE_DEVICES=$GPU_ID python demo.py --im=$PATH_TO_IMAGE 
 ```
-To see all options run `python demo.py --help`
+To see all valid options run `python demo.py --help`
 
 <b> (c) Streamlit interactive demo </b>  
-Interactive demo using Streamlit.
+We provide interactive demo using Streamlit.
 
 First `pip install streamlit` and then run
 ```
 streamlit run st_interactive.py
 ```
-Navigate to the ip address using your favorite browser.
+Navigate to the posted `ip address` using your favorite browser.
 
 
 ## Developement
@@ -71,7 +73,7 @@ We support simple spatial affine transformation and various color transformation
 
 ## Citation
 
-If you found our work useful please cite using
+If you found our work useful, please cite using
 ```
 @article{huh2020ganprojection,
     title = {Transforming and Projecting Images to Class-conditional Generative Networks}
