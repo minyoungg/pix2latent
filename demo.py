@@ -429,7 +429,7 @@ if __name__ == '__main__':
         solver(im, mask=mask, cls_lbl=cls_lbl,
                encoder_init=args.encoder_init,
                num_seeds=args.num_seeds,
-               max_batch_size=args.max_batch,
+               max_batch_size=args.max_batch_size,
                log=False)
 
     idx = np.argmin(losses).squeeze()
