@@ -80,7 +80,11 @@ def step(model, vars, loss_fn, transform_fn=None, optimize=True,
 
 
         # (4) optimize
-        _vars.opt.step(closure)
+        if  optimize:
+            _vars.opt.step(closure)
+        else:
+            with torch.no_grad():
+                _vars.opt.step(closure)
 
         outs.extend(out.detach())
         indiv_losses.extend(loss)

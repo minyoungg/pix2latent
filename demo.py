@@ -8,6 +8,7 @@ import init_paths
 import torch
 import torch.nn as nn
 
+import os
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,6 +31,7 @@ import imagenet_tools
 from classifier import Classifier
 from encoder import load_biggan_encoder
 from detector import Detector
+
 
 
 class TransformableBasinCMAProjection():
@@ -140,7 +142,7 @@ class TransformableBasinCMAProjection():
                  im,
                  cls_lbl=None,
                  mask=None,
-                 num_seeds=9,
+                 num_seeds=18,
                  cma_steps=10,
                  adam_steps=10,
                  finetune_steps=500,
@@ -148,7 +150,10 @@ class TransformableBasinCMAProjection():
                  transform_adam_steps=30,
                  encoder_init=True,
                  max_batch_size=9,
-                 log=False):
+                 log=False,
+                 remove_cache=True,
+                 st_progress_bar=False
+                 ):
         """
         Projects image using BasinCMA and transformation search.
 
@@ -185,6 +190,10 @@ class TransformableBasinCMAProjection():
                 max_batch_size < num_seeds will slow down optimization.
             log:
                 If True, returns intermediate optimization results.
+            remove_cache:
+                Removes cached stuff from auto_detect()
+            st_progress_bar:
+                If true, uses streamlit progress bar
 
         Returns
             variables
@@ -196,19 +205,20 @@ class TransformableBasinCMAProjection():
                 If log=True, returns intermediate losses.
         """
 
-
         # -- Check if auto_detection was run -- #
         if cls_lbl is None:
             if hasattr(self, '_cls_lbl'):
                 print('Found class label from auto_detect()')
                 cls_lbl = self._cls_lbl
-                del self._cls_lbl # For safety reasons
+                if remove_cache:
+                    del self._cls_lbl # For safety reasons
 
         if mask is None:
             if hasattr(self, '_mask'):
                 print('Found mask from auto_detect()')
                 mask = self._mask
-                del self._mask # For safety reasons
+                if remove_cache:
+                    del self._mask # For safety reasons
 
 
         # -- Prepare variables -- #
@@ -223,7 +233,7 @@ class TransformableBasinCMAProjection():
         # -- Transformation -- #
         transform_fn = TF.ComposeTransform([
             (TF.SpatialTransform(optimize=True), 1.0),
-            (TF.BrightnessTransform(), 5.0)
+            (TF.BrightnessTransform(), 3.0)
         ])
 
         t = transform_fn.get_param()
@@ -235,17 +245,42 @@ class TransformableBasinCMAProjection():
 
 
         # -- Optimizer -- #
-        opt = optimizers.BasinCMAOptimizer(
-                                    self.model,
-                                    max_batch_size=max_batch_size,
-                                    log=log
-                                    )
+        if num_seeds == 18:
+            opt = optimizers.BasinCMAOptimizer(
+                                        model=self.model,
+                                        max_batch_size=max_batch_size,
+                                        log=log,
+                                        )
+        else:
+            print('Number of seed is set below 18, using Nevergrad CMA.')
+            # Note:
+            # This performs worse than CMA implementation above.
+            opt = optimizers.NevergradHybridOptimizer(
+                                        method='CMA',
+                                        model=self.model,
+                                        max_batch_size=max_batch_size,
+                                        log=log,
+                                        )
+
         opt.register_transform_fn(transform_fn)
         opt.register_loss_fn(self.loss_fn)
 
 
         # -- Search transformation -- #
         print('Searching for transformation')
+        if st_progress_bar:
+            import streamlit as st
+            st.sidebar.markdown('<h4> Optimizing transformation </h4>',
+                                unsafe_allow_html=True)
+            st_transform_pbar = st.sidebar.progress(0)
+
+            st.sidebar.markdown('<h4> Projecting image </h4>',
+                                unsafe_allow_html=True)
+            st_project_pbar = st.sidebar.progress(0)
+        else:
+            st_transform_pbar = None
+            st_project_pbar = None
+
         _var_manager = copy.deepcopy(var_manager)
         t, _, _ = search_transform(
                                model=self.model,
@@ -254,6 +289,7 @@ class TransformableBasinCMAProjection():
                                loss_fn=self.loss_fn,
                                meta_steps=transform_adam_steps,
                                grad_steps=transform_cma_steps,
+                               pbar=st_transform_pbar,
                                log=log,
                                )
         var_manager.set_default(t=t)
@@ -274,16 +310,13 @@ class TransformableBasinCMAProjection():
 
         # -- Optimize -- #
         variables, outs, losses = opt.optimize(
-                                       var_manager,
-                                       meta_steps=cma_steps,
-                                       grad_steps=adam_steps,
-                                       cma_z_init=z_init,
-                                       finetune_grad_steps=finetune_steps,
-                                       )
+                            var_manager, cma_steps, adam_steps, finetune_steps,
+                            128, z_init, pbar=st_project_pbar)
+
         return variables, outs, losses, transform_fn
 
 
-    def auto_detect(self, im, mask_type='mask'):
+    def auto_detect(self, im, mask_type='segmentation'):
         if not hasattr(self, 'detector'):
             self.detector = Detector()
 
@@ -310,7 +343,13 @@ class TransformableBasinCMAProjection():
 
                 bbox_im = im[bbox[1]: bbox[3], bbox[0]: bbox[2], :]
 
-                pred_cls = self.classifier(bbox_im, is_tensor=False)
+                top5_cls = self.classifier(bbox_im, is_tensor=False, top5=True)
+                pred_cls = top5_cls[1][0].item()
+
+                misc = []
+                for c in top5_cls[1]:
+                    misc.append([c.item(), IMAGENET_LABEL_TO_NOUN[c.item()]])
+
                 pred_wnid = IMAGENET_LABEL_TO_WNID[pred_cls]
                 pred_cls_noun = IMAGENET_LABEL_TO_NOUN[pred_cls]
 
@@ -321,7 +360,7 @@ class TransformableBasinCMAProjection():
                            'detected class {}').format(
                            pred_cls_noun, det_cls_noun))
 
-                    if mask_type == 'mask':
+                    if mask_type == 'segmentation':
                         m = det_masks[idx] > 0.5
 
                     elif mask_type == 'bbox':
@@ -336,7 +375,7 @@ class TransformableBasinCMAProjection():
                     m = to_image(m, denormalize=False)
                     m = cv2.medianBlur(m.astype(np.uint8), 5)
                     self._mask = m.reshape(m.shape[0], m.shape[1], 1) / 255.
-                    return self._mask
+                    return self._mask, pred_cls_noun, det_cls_noun, misc
 
                 print(('Classification and Detection is inconsistent. ' +
                        'Classified class {} is not an element of the ' +
@@ -350,3 +389,65 @@ class TransformableBasinCMAProjection():
         print('Mask is set to None and the predicted class is: {} ({})'.format(
                 cls_lbl, IMAGENET_LABEL_TO_NOUN[cls_lbl]))
         return
+
+
+
+if __name__ == '__main__':
+    import argparse
+    from im_utils import smart_resize, center_crop, poisson_blend
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--im', type=str,
+                        default='./examples/very-cute-doggo.jpg',
+                        help='path to an image')
+    parser.add_argument('--mask', type=str,
+                        help='path to mask image')
+    parser.add_argument('--cls', type=int,
+                        help='ImageNet imagenet class label')
+    parser.add_argument('--encoder_init', action='store_true',
+                        help='uses encoder to initialize search')
+    args = parser.parse_args()
+
+    assert os.path.exists(args.im)
+    fn = os.path.basename(args.im)
+
+    im = cv2.imread(args.im)[:, :, [2, 1, 0]]
+    solver = TransformableBasinCMAProjection()
+    im = smart_resize(center_crop(im))
+
+    if args.mask:
+        mask = cv2.imread(args.mask)[:, :, :1]
+    else:
+        solver.auto_detect(im, mask_type='bbox')
+        mask = solver._mask
+
+    if args.cls:
+        cls_lbl = args.cls
+    else:
+        if not hasattr(solver, '_cls_lbl'):
+            solver.auto_detect(im, mask_type='bbox')
+        cls_lbl = solver._cls_lbl
+
+    variables, outs, losses, transform_fn = \
+                            solver(im, mask=mask, cls_lbl=cls_lbl,
+                                   encoder_init=args.encoder_init,
+                                   log=False)
+
+    idx = np.argmin(losses).squeeze()
+    z = torch.stack(variables.z.data)
+    cv = torch.stack(variables.cv.data)
+
+    with torch.no_grad():
+        out = solver.model(z=z[idx:idx+1], c=cv[idx:idx+1])
+        out_im = to_image(out)[0]
+
+    t = torch.stack(variables.t.data)[idx:idx+1]
+
+    inv_im = to_image(transform_fn(out.cpu(), t.cpu(), invert=True))[0]
+    blended = poisson_blend(im[:, :, [2, 1, 0]], mask, inv_im)
+
+    os.makedirs('./results', exist_ok=True)
+
+    jpg_quality = [int(cv2.IMWRITE_JPEG_QUALITY), 100]
+    cv2.imwrite('./results/projected-{}.jpg'.format(fn), inv_im, jpg_quality)
+    cv2.imwrite('./results/blended-{}.jpg'.format(fn), blended, jpg_quality)

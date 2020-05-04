@@ -81,6 +81,7 @@ def vis_gif(save_path, ims, duration=20.0):
 
 
 def add_border(image, color='r', border_size=5, cv2_format=True):
+    """ adds border around an image """
     if cv2_format:
         r, g, b  = [[0, 0, 255]], [[0, 255, 0]], [[255, 0, 0]]
     else:
@@ -121,12 +122,70 @@ def make_video(save_path, ims, fps=30, duration=None, safe=True):
     if duration is not None:
         fps = len(ims) / duration
 
-    try:
-        skvideo.io.vwrite(save_path, ims,
-                          inputdict={'-r': str(fps)},
-                          outputdict={'-r': str(fps),
-                                      '-pix_fmt': 'yuv420p',
-                                      '-b': '10000000'})
-    except:
-        pass
+    skvideo.io.vwrite(save_path, ims,
+                      inputdict={'-r': str(fps)},
+                      outputdict={'-r': str(fps),
+                                  '-pix_fmt': 'yuv420p',
+                                  '-b': '10000000'})
     return
+
+
+def center_crop(image):
+    """
+    Center crop images along the maximum dimension
+    Args:
+        image:
+            A numpy array of an image HW3
+    Returns:
+        cropped_image: A cropped image with H == W
+    """
+    h, w = image.shape[:2]
+    if h > w:
+        h_st = (h - w) // 2
+        h_en = h_st + w
+        cropped_image = image[h_st: h_en, :, :]
+    else:
+        w_st = (w - h) // 2
+        w_en = w_st + h
+        cropped_image = image[:, w_st: w_en, :]
+    assert cropped_image.shape[0] == cropped_image.shape[1]
+    return cropped_image
+
+
+def smart_resize(im, target_size=(256, 256)):
+    """
+    Resize an image into target spatial dimension. If resizing to a smaller
+    area, uses cv2.INTER_AREA else cv2.INTER_BILINEAR
+    """
+    if np.prod(im.shape[:2]) >= np.prod(target_size):
+        interp_fn = cv2.INTER_AREA
+    else:
+        interp_fn = cv2.INTER_LINEAR
+    return cv2.resize(im, (target_size[1], target_size[0]),
+                      interpolation=interp_fn)
+
+
+def poisson_blend(target, mask, generated):
+    from transform_utils import compute_stat_from_mask
+
+    if np.max(target) <= 1.0:
+        target = target * 255.
+    if np.max(generated) <= 1.0:
+        generated = generated * 255.
+    if np.max(mask) > 1.0:
+        mask = mask / 255.
+
+    obj_center, _ = compute_stat_from_mask(
+                binarize(torch.Tensor(mask).permute(2, 0, 1).unsqueeze(0)))
+
+    mask = (mask > 0.5).astype(np.float)
+
+    blended_result = cv2.seamlessClone(
+                                    generated.astype(np.uint8),
+                                    target.astype(np.uint8),
+                                    (255 *  mask[:, :, 0]).astype(np.uint8),
+                                    obj_center[::-1],
+                                    cv2.NORMAL_CLONE
+                                    )
+
+    return blended_result

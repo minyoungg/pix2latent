@@ -17,12 +17,14 @@ def check_input(x):
 
 def check_loss_input(im0, im1, w):
     """ im0 is out and im1 is target and w is mask"""
-    e_msg = 'Dim 0 doesnt match {} vs {}'.format(w.size(0), im0.size(0))
+    assert list(im0.size())[2:] == list(im1.size())[2:], 'spatial dim mismatch'
+    assert list(im0.size())[2:] == list(w.size())[2:], 'spatial dim mismatch'
 
-    if w is not None:
-        assert w.size(0) == im0.size(0) or w.size(1) == 1, e_msg
+    if im1.size(0) != 1:
+        assert im0.size(0) == im1.size(0)
 
-    assert im0.size() == im1.size(), '{} vs {}'.format(im0.size(), im1.size())
+    if w is not None and w.size(0) != 1:
+            assert im0.size(0) == w.size(0)
     return
 
 

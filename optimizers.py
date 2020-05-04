@@ -11,12 +11,16 @@ import torch
 import numpy as np
 
 
+### Base classes for Optimizers
 
 class BaseOptimizer():
-    def __init__(self, model, log=True, log_iter=10, max_batch_size=9, *args):
+    def __init__(self, model, log=True, log_iter=10, max_batch_size=9, \
+                 *args, **kwargs):
+        super().__init__()
         self.max_batch_size = max_batch_size
         self.log = log
         self.log_iter = log_iter
+        self.show_iter = 50
         self.model = model
         self.transform_fn = None
         return
@@ -64,23 +68,96 @@ class BaseOptimizer():
         return
 
 
-class GradientOptimizer(BaseOptimizer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args)
+class BaseCMAOptimizer():
+    def __init__(self):
+        """
+        Attribute:
+            inverted_loss
+                If inverted_loss is True, compute the loss on the original
+                target image. If False, use the last iterate loss. Setting
+                this to True may result in better result but slightly slower
+                run-time.
+        """
+        super().__init__()
+        self.inverted_loss = True
         return
 
-    def optimize(self, var_manager, grad_steps):
+    def setup_cma(self, cma_dim=128, cma_init=None):
+        """
+        Args
+            cma_z_dim
+                Dimension of the CMA optimizer
+            cma_z_init
+                cma_z_init can be a list or a tuple. If tuple (mu, sigma).
+                If cma_z_init is only mu, sigma is set to 1.0
+        """
+        if cma_init:
+            if type(cma_init) == tuple:
+                assert len(cma_init[0]) == cma_dim
+                self.cma_opt = CMA(*cma_init)
+            else:
+                assert len(cma_init) == cma_dim
+                self.cma_opt = CMA(cma_init)
+        else:
+            self.cma_opt = CMA([0] * cma_dim)
+        return
+
+    def cma_init(self, var_manager, cma_var='z', is_last_iter=False):
+        if is_last_iter:
+            ns = var_manager.num_seeds
+            variables = var_manager.init(num_seeds=ns)
+            override_variables(variables, [[cma_var, self.cma_opt.ask(ns)]])
+        else:
+            variables = var_manager.init(num_seeds=self.cma_opt.batch_size())
+            override_variables(variables, [[cma_var, self.cma_opt.ask()]])
+        return variables
+
+    def cma_update(self, v, cma_var='z'):
+        cma_v = to_numpy(torch.stack(v[cma_var].data))
+
+        if self.inverted_loss:
+            with torch.no_grad():
+                z, cv = torch.stack(v.z.data), torch.stack(v.cv.data)
+                out = self.model(z=z, c=cv)
+
+                if v.t is not None:
+                    t = torch.stack(v.t.data)
+                    out = self.transform_fn(out, t, invert=True)
+
+                mask = binarize(v.weight.data[0]).unsqueeze(0)
+                target = v.target.data[0].unsqueeze(0)
+                loss = self.loss_fn(out, target, mask).detach().cpu().numpy()
+                self.cma_opt.tell(cma_v, loss)
+        else:
+            self.cma_opt.tell(cma_v, self.loss)
+        return
+
+
+
+
+### Useable Optimizers
+
+
+class GradientOptimizer(BaseOptimizer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        return
+
+    def optimize(self, var_manager, grad_steps, pbar=None):
         self.losses, self.outs = [], []
 
         variables = var_manager.init()
         for i in range(grad_steps):
             self.step(variables, optimize=True)
 
+            if pbar is not None:
+                pbar.progress(i / total_steps)
+
             if self.log:
                 if ((i + 1) % self.log_iter == 0) or (i + 1 == grad_steps):
                     self.log_result(variables, i + 1)
 
-            if (i + 1) % 50 == 0:
+            if (i + 1) % self.show_iter == 0:
                 progress_print('optimize', i + 1, grad_steps, 'c')
 
         if self.log:
@@ -88,23 +165,21 @@ class GradientOptimizer(BaseOptimizer):
         return variables, self.out, self.loss
 
 
-class CMAOptimizer(BaseOptimizer):
+class CMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args)
+        super().__init__(*args, **kwargs)
         return
 
-    def optimize(self, var_manager, meta_steps, finetune_grad_steps=0,
-                 cma_z_init=None):
-        cma_opt = CMA(*cma_z_init) if cma_z_init is not None else CMA()
-        grad_steps = finetune_grad_steps # for code compactness
-        total_steps = meta_steps + finetune_grad_steps
+    def optimize(self, var_manager, meta_steps, grad_steps=0, cma_dim=128,
+                 cma_init=None, pbar=None):
+
+        self.setup_cma(cma_dim, cma_init)
         self.losses, self.outs, i = [], [], 0
+        total_steps = meta_steps + grad_steps
 
         # CMA optimization
         for _ in range(meta_steps):
-            variables = var_manager.init(num_seeds=cma_opt.batch_size())
-
-            override_variables(variables, [['z', cma_opt.ask()]]) # 18 seeds
+            variables = self.cma_init(var_manager, 'z', is_last_iter=False)
             self.step(variables, optimize=False)
             i += 1
 
@@ -112,15 +187,16 @@ class CMAOptimizer(BaseOptimizer):
                 if ((i + 1) % self.log_iter == 0) or (i + 1 == grad_steps):
                     self.log_result(variables, i + 1)
 
-            cma_opt.tell(to_numpy(torch.stack(variables.z.data)), self.loss)
+            self.cma_update(variables, 'z')
 
-            if (i + 1) % 50 == 0:
-                progress_print('optimize', i + 1, total_steps, 'c')
+            if pbar is not None:
+                pbar.progress(i / total_steps)
+            else:
+                if (i + 1) % self.show_iter == 0:
+                    progress_print('optimize', i + 1, total_steps, 'c')
 
         # Finetune CMA with ADAM optimization
-        variables = var_manager.init()
-        override_variables(
-                variables, [['z', cma_opt.ask(var_manager.num_seeds)]])
+        variables = self.cma_init(var_manager, 'z', is_last_iter=True)
 
         for _ in range(grad_steps):
             self.step(variables, optimize=True)
@@ -130,61 +206,65 @@ class CMAOptimizer(BaseOptimizer):
                 if ((i + 1) % self.log_iter == 0) or (i + 1 == grad_steps):
                     self.log_result(variables, i + 1)
 
-            if (i + 1) % 50 == 0:
-                progress_print('optimize', i + 1, total_steps, 'c')
+            if pbar is not None:
+                pbar.progress(i / total_steps)
+            else:
+                if (i + 1) % self.show_iter == 0:
+                    progress_print('optimize', i + 1, total_steps, 'c')
 
         if self.log:
             return variables, self.outs, self.losses
         return variables, self.out, self.loss
 
 
-class BasinCMAOptimizer(BaseOptimizer):
+class BasinCMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
         return
 
-    def optimize(self, var_manager, meta_steps, grad_steps, cma_z_init=None,
-                 finetune_grad_steps=300):
-        cma_opt = CMA(*cma_z_init) if cma_z_init is not None else CMA()
+    def optimize(self, var_manager, meta_steps, grad_steps,
+                 finetune_grad_steps=300, cma_dim=128, cma_init=None,
+                 pbar=None):
 
+        self.setup_cma(cma_dim, cma_init)
         self.losses, self.outs, i = [], [], 0
         total_steps = meta_steps * grad_steps + finetune_grad_steps
 
         for meta_iter in range(meta_steps + 1):
             is_last_iter = (meta_iter == meta_steps)
-
-            if is_last_iter:
-                ns = var_manager.num_seeds
-                variables = var_manager.init(num_seeds=ns)
-                override_variables(variables, [['z', cma_opt.ask(ns)]])
-            else:
-                variables = var_manager.init(num_seeds=cma_opt.batch_size())
-                override_variables(variables, [['z', cma_opt.ask()]])
-
             _grad_steps = finetune_grad_steps if is_last_iter else grad_steps
+
+            variables = self.cma_init(var_manager, 'z', is_last_iter)
 
             for _ in range(_grad_steps):
                 self.step(variables, optimize=True)
                 i += 1
 
+
                 if self.log:
                     if ((i + 1) % self.log_iter == 0) or (i + 1 == grad_steps):
                         self.log_result(variables, i + 1)
 
-                if (i + 1) % 50 == 0:
-                    progress_print('optimize', i + 1, total_steps, 'c')
+                if pbar is not None:
+                    pbar.progress(i / total_steps)
+                else:
+                    if (i + 1) % self.show_iter == 0:
+                        progress_print('optimize', i + 1, total_steps, 'c')
 
             if not is_last_iter:
-                cma_opt.tell(to_numpy(torch.stack(variables.z.data)), self.loss)
+                self.cma_update(variables, 'z')
 
         if self.log:
             return variables, self.outs, self.losses
         return variables, self.out, self.loss
 
 
+## ---  Experimental code below --- ##
+
+
 class NevergradOptimizer(BaseOptimizer):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args)
+        super().__init__(method, *args, **kwargs)
         self.method = kwargs['method']
         self.valid_methods = [x[0] for x in ng.optimizers.registry.items()]
         self.sequential_methods = ['SQPCMA', 'chainCMAPowell', 'Powell']
@@ -196,14 +276,22 @@ class NevergradOptimizer(BaseOptimizer):
                 'unknown nevergrad method: {}'.format(self.method)
         return
 
-    def optimize(self, var_manager, meta_steps, finetune_grad_steps=0,
-                 cma_z_init=None):
-        p = ng.p.Array(shape=(128,)).set_mutation(sigma=1)
-        opt_fn = ng.optimizers.registry[self.method]
-        opt = opt_fn(parametrization=p, budget=meta_steps)
+    def optimize(self, var_manager, meta_steps, grad_steps=300,
+                 meta_dim=128, meta_init=None, pbar=None):
 
+        # -- Setup optimizer -- #
+        opt_fn = ng.optimizers.registry[self.method]
+        if meta_init is None:
+            p = ng.p.Array(shape=(meta_dim,)).set_mutation(sigma=1.0)
+            opt = opt_fn(parametrization=p, budget=meta_steps + 1)
+        else:
+            p = ng.p.Array(meta_init[0]).set_mutation(sigma=meta_init[1])
+            opt = opt_fn(parametrization=p, budget=meta_steps + 1)
+
+        total_steps = meta_steps + grad_steps
         self.losses, self.outs, i = [], [], 0
 
+        # -- Start optimization -- #
         for _ in range(meta_steps):
             if self.is_sequential:
                 variables = var_manager.init(num_seeds=1)
@@ -228,8 +316,32 @@ class NevergradOptimizer(BaseOptimizer):
                 for x, l in zip(_x, self.loss):
                     opt.tell(z, l)
 
-            if (i + 1) % 50 == 0:
-                progress_print('optimize', i + 1, meta_steps, 'c')
+            if pbar is not None:
+                pbar.progress(i / total_steps)
+            else:
+                if (i + 1) % self.show_iter == 0:
+                    progress_print('optimize', i + 1, meta_steps, 'c')
+
+
+        # -- Finetune the final seeds with ADAM -- #
+        variables = var_manager.init()
+        _z = [opt.ask() for _ in range(var_manager.num_seeds)]
+        z = np.concatenate([np.array(x.args) for x in _z])
+        override_variables(variables, [['z', z]])
+
+        for _ in range(grad_steps):
+            self.step(variables, optimize=True)
+            i += 1
+
+            if self.log:
+                if ((i + 1) % self.log_iter == 0) or (i + 1 == grad_steps):
+                    self.log_result(variables, i + 1)
+
+            if pbar is not None:
+                pbar.progress(i / total_steps)
+            else:
+                if (i + 1) % self.show_iter == 0:
+                    progress_print('optimize', i + 1, total_steps, 'c')
 
         if self.log:
             return variables, self.outs, self.losses
@@ -238,7 +350,7 @@ class NevergradOptimizer(BaseOptimizer):
 
 class NevergradHybridOptimizer(BaseOptimizer):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args)
+        super().__init__(*args, **kwargs)
         self.method = kwargs['method']
         self.valid_methods = [x[0] for x in ng.optimizers.registry.items()]
         self.sequential_methods = ['SQPCMA', 'chainCMAPowell', 'Powell']
@@ -250,18 +362,25 @@ class NevergradHybridOptimizer(BaseOptimizer):
                 'unknown nevergrad method: {}'.format(self.method)
         return
 
-    def optimize(self, var_manager, meta_steps, grad_steps, cma_z_init=None,
-                 finetune_grad_steps=300):
+    def optimize(self, var_manager, meta_steps, grad_steps,
+                 finetune_grad_steps=300, meta_dim=128, meta_init=None,
+                 pbar=None):
 
-        p = ng.p.Array(shape=(128,)).set_mutation(sigma=1)
+        # -- Setup optimizer -- #
         opt_fn = ng.optimizers.registry[self.method]
-        opt = opt_fn(parametrization=p, budget=meta_steps)
+        if meta_init is None:
+            p = ng.p.Array(shape=(meta_dim,)).set_mutation(sigma=1.0)
+            opt = opt_fn(parametrization=p, budget=meta_steps + 1)
+        else:
+            p = ng.p.Array(init=meta_init[0]).set_mutation(sigma=meta_init[1])
+            opt = opt_fn(parametrization=p, budget=meta_steps + 1)
 
         self.losses, self.outs, i = [], [], 0
-        total_steps = (meta_steps - 1) * grad_steps + finetune_grad_steps
+        total_steps = meta_steps * grad_steps + finetune_grad_steps
 
+
+        # -- Start optimization -- #
         for meta_iter in range(meta_steps + 1):
-
             if self.is_sequential:
                 variables = var_manager.init(num_seeds=1)
                 _z = opt.ask()
@@ -280,12 +399,18 @@ class NevergradHybridOptimizer(BaseOptimizer):
                 self.step(variables, optimize=True)
                 i += 1
 
+                if pbar is not None:
+                    pbar.progress(i / total_steps)
+
                 if self.log:
                     if ((i + 1) % self.log_iter == 0) or (i + 1 == grad_steps):
                         self.log_result(variables, i + 1)
 
-                if (i + 1) % 50 == 0:
-                    progress_print('optimize', i + 1, total_steps, 'c')
+                if pbar is not None:
+                    pbar.progress(i / total_steps)
+                else:
+                    if (i + 1) % self.show_iter == 0:
+                        progress_print('optimize', i + 1, total_steps, 'c')
 
             if self.is_sequential:
                 opt.tell(_z, self.loss[0])
