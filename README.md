@@ -21,13 +21,13 @@ pip install -r requirements.txt
 
 <b> (2) Clone LPIPS </b>  
 
-The code uses perceptual similarity loss. So we need to clone the LPIPS repo into this directory.
+The code uses perceptual similarity loss. So clone the LPIPS repo into this directory.
 ```bash
 git clone https://github.com/richzhang/PerceptualSimilarity
 ```
 The path should be in the following format ... or you can set the path manually in `init_paths.py`
 ```bash
-./GAN-Projection/PerceptualSimilarity
+./GAN-Transform-and-Project/PerceptualSimilarity
 ```
 
 <b> (3) Encoder weights </b>   
@@ -36,7 +36,7 @@ Download the weights from [google drive](https://drive.google.com/drive/folders/
 
 The encoder weight should be in the following path 
 ```bash
-./GAN-Projection/nets/weights/encoder.ckpt
+./GAN-Transform-and-Project/nets/weights/encoder.ckpt
 ```
 
 ## Demo
