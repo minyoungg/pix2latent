@@ -14,6 +14,7 @@ import numpy as np
 ### Base classes for Optimizers
 
 class BaseOptimizer():
+    """ Base template for gradient optimization """
     def __init__(self, model, log=True, log_iter=10, max_batch_size=9, \
                  *args, **kwargs):
         super().__init__()
@@ -69,6 +70,11 @@ class BaseOptimizer():
 
 
 class BaseCMAOptimizer():
+    """
+    Base template for CMA optimization. Should be used jointly with
+    BaseOptimizer.
+    """
+
     def __init__(self):
         """
         Attribute:
@@ -180,7 +186,8 @@ class GradientOptimizer(BaseOptimizer):
 
 class CMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
     """
-    CMA optimizer.
+    CMA optimizer. Gradient descent can be used to further optimize the seeds
+    from CMA.
     """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -197,7 +204,11 @@ class CMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
             meta_steps:
                 number of CMA updates
             grad_steps:
-                number of gradient updates
+                number of gradient updates to apply after CMA optimization
+            cma_dim:
+                dimension of CMA
+            cma_init:
+                initialize cma with the provided mean (optional: mean and sigma)
             pbar:
                 progress bar such as tqdm or st.progress
         """
@@ -246,6 +257,9 @@ class CMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
 
 
 class BasinCMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
+    """
+    Optimize using BasinCMA. BasinCMA interleaves CMA updates with ADAM updates.
+    """
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
         return
@@ -253,7 +267,26 @@ class BasinCMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
     def optimize(self, var_manager, meta_steps, grad_steps,
                  finetune_grad_steps=300, cma_dim=128, cma_init=None,
                  pbar=None):
-
+        """
+        Args
+            var_manager:
+                variable manager for variable creation.
+            grad_steps:
+                number of gradient descent updates.
+            meta_steps:
+                number of CMA updates
+            grad_steps:
+                number of gradient updates per CMA update.
+            finetune_grad_steps:
+                after the final iteration of BasinCMA, further optimize the
+                last drawn samples using gradient descent.
+            cma_dim:
+                dimension of CMA
+            cma_init:
+                initialize cma with the provided mean (optional: mean and sigma)
+            pbar:
+                progress bar such as tqdm or st.progress
+        """
         self.setup_cma(cma_dim, cma_init)
         self.losses, self.outs, i = [], [], 0
         total_steps = meta_steps * grad_steps + finetune_grad_steps
@@ -306,7 +339,25 @@ class NevergradOptimizer(BaseOptimizer):
 
     def optimize(self, var_manager, meta_steps, grad_steps=300,
                  meta_dim=128, meta_init=None, pbar=None):
-
+        """
+        Args
+            var_manager:
+                variable manager for variable creation.
+            meta_steps:
+                number of outer-loop updates. This is the number of updates for
+                the nevergrad optimizer.
+            grad_steps:
+                number of gradient updates to apply after gradient-free
+                optimization.
+            meta_dim:
+                dimension of the variable to optimize using gradient-free
+                optimizer.
+            meta_init:
+                initialize nevergrad optimizer with the provided mean
+                (optional: mean and sigma)
+            pbar:
+                progress bar such as tqdm or st.progress
+        """
         # -- Setup optimizer -- #
         opt_fn = ng.optimizers.registry[self.method]
         if meta_init is None:
@@ -393,6 +444,27 @@ class NevergradHybridOptimizer(BaseOptimizer):
     def optimize(self, var_manager, meta_steps, grad_steps,
                  finetune_grad_steps=300, meta_dim=128, meta_init=None,
                  pbar=None):
+        """
+        Args
+            var_manager:
+                variable manager for variable creation.
+            meta_steps:
+                number of outer-loop updates. This is the number of updates for
+                the nevergrad optimizer.
+            grad_steps:
+                number of gradient updates per meta_step.
+            finetune_grad_steps:
+                after the final iteration of nevergrad, further optimize the
+                last drawn samples using gradient descent.
+            meta_dim:
+                dimension of the variable to optimize using gradient-free
+                optimizer.
+            meta_init:
+                initialize nevergrad optimizer with the provided mean
+                (optional: mean and sigma)
+            pbar:
+                progress bar such as tqdm or st.progress
+        """
 
         # -- Setup optimizer -- #
         opt_fn = ng.optimizers.registry[self.method]

@@ -404,6 +404,15 @@ if __name__ == '__main__':
                         help='path to mask image')
     parser.add_argument('--cls', type=int,
                         help='ImageNet imagenet class label')
+    parser.add_argument('--num_seeds', type=int,
+                        default=9,
+                        help='Number of seeds to optimize')
+    parser.add_argument('--max_batch_size', type=int,
+                        default=9,
+                        help='Maximum mini-batch size. Need to tune based on '+\
+                             'the amount of GPU memory you have. ' +\
+                             'Rough estimate: GTX1080=6, GTX2080TI=9, V100=18'
+                        )
     parser.add_argument('--encoder_init', action='store_true',
                         help='uses encoder to initialize search')
     args = parser.parse_args()
@@ -431,6 +440,8 @@ if __name__ == '__main__':
     variables, outs, losses, transform_fn = \
                             solver(im, mask=mask, cls_lbl=cls_lbl,
                                    encoder_init=args.encoder_init,
+                                   num_seeds=args.num_seeds,
+                                   max_batch_size=args.max_batch,
                                    log=False)
 
     idx = np.argmin(losses).squeeze()
