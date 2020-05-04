@@ -67,7 +67,7 @@ We provide several demos for our project. If you do not wish to use the encoder,
 
   First `pip install streamlit` and then run
   ```
-  streamlit run st_interactive.py
+  CUDA_VISIBLE_DEVICES=$GPU_ID streamlit run st_interactive.py
   ```
   Navigate to the posted `ip address` using your favorite browser.
 
