@@ -1,5 +1,5 @@
 # GAN-Transform-and-Project
-**Transforming and Projecting Images to Class-conditional Generative Networks**  
+**Transforming and Projecting Images into Class-conditional Generative Networks**  
 [Minyoung Huh](http://minyounghuh.com/) &nbsp; [Richard Zhang](https://richzhang.github.io/) &nbsp; [Jun-Yan Zhu](https://people.csail.mit.edu/junyanz/) &nbsp; [Sylvain Paris](http://people.csail.mit.edu/sparis/) &nbsp; [Aaron Hertzmann](https://www.dgp.toronto.edu/~hertzman/)  
 MIT CSAIL &nbsp; Adobe Research  
 [[Paper]]() &nbsp; [[Project Page]]()  
@@ -21,13 +21,13 @@ pip install -r requirements.txt
 
 <b> (2) Clone LPIPS </b>  
 
-The code uses perceptual similarity loss. So we need to clone the LPIPS repo into this directory.
+The code uses perceptual similarity loss. So clone the LPIPS repo into this directory.
 ```bash
 git clone https://github.com/richzhang/PerceptualSimilarity
 ```
 The path should be in the following format ... or you can set the path manually in `init_paths.py`
 ```bash
-./GAN-Projection/PerceptualSimilarity
+./GAN-Transform-and-Project/PerceptualSimilarity
 ```
 
 <b> (3) Encoder weights </b>   
@@ -36,17 +36,29 @@ Download the weights from [google drive](https://drive.google.com/drive/folders/
 
 The encoder weight should be in the following path 
 ```bash
-./GAN-Projection/nets/weights/encoder.ckpt
+./GAN-Transform-and-Project/nets/weights/encoder.ckpt
 ```
 
 ## Demo
+<b> (a) Jupyter demo </b>  
 We provide a demo of our project in [example.ipynb](example.ipynb)
 
-Here is a quick TLDR of the demo
-```python
-solver = TransformableBasinCMAProjection()
-results = solver(im, mask=mask, cls_lbl=class_label)
+<b> (b) Command line </b>  
+To invert image using command line
+```bash
+CUDA_VISIBLE_DEVICES=$GPU_ID python demo.py --im=$PATH_TO_IMAGE 
 ```
+To see all options run `python demo.py --help`
+
+<b> (c) Streamlit interactive demo </b>  
+Interactive demo using Streamlit.
+
+First `pip install streamlit` and then run
+```
+streamlit run st_interactive.py
+```
+Navigate to the ip address using your favorite browser.
+
 
 ## Developement
 To get a glimpse on how to extend the work or invert images on your generative model. Take a look at [demo.py](demo.py)
