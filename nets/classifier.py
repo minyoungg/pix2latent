@@ -1,6 +1,5 @@
 import torch
 from torchvision import models, transforms
-import numpy as np
 
 
 class Classifier():
@@ -8,11 +7,11 @@ class Classifier():
         self.model = models.resnext101_32x8d(pretrained=True)
         self.model.float().cuda().eval()
         self.transform = transforms.Compose([
-                            transforms.ToPILImage(),
-                            transforms.ToTensor(),
-                            transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                                 std=[0.229, 0.224, 0.225]),
-                            ])
+            transforms.ToPILImage(),
+            transforms.ToTensor(),
+            transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                                 std=[0.229, 0.224, 0.225]),
+        ])
         return
 
     def prep(self, im, is_tensor=True):
@@ -30,7 +29,7 @@ class Classifier():
                 x = self.model(x)[0]
 
             if top5:
-                assert as_onehot == False
+                assert not as_onehot
                 return torch.topk(torch.softmax(x, dim=0), 5, dim=0)
 
             x = torch.argmax(x).item()

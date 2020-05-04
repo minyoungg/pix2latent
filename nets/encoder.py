@@ -1,4 +1,3 @@
-import numpy as np
 import torch
 from torch import nn
 import torch.nn.functional as F
@@ -63,7 +62,7 @@ class AdaptiveGroupNorm(nn.Module):
         x = F.group_norm(x, self.num_groups, self.weight, self.bias, self.eps)
 
         # Condition it
-        gamma = 1.0 + self.fc_gamma(c) # 1 centered
+        gamma = 1.0 + self.fc_gamma(c)  # 1 centered
         beta = self.fc_beta(c)
         gamma = gamma.view(gamma.size(0), gamma.size(1), 1, 1)
         beta = beta.view(beta.size(0), beta.size(1), 1, 1)
@@ -106,25 +105,25 @@ class SimpleBlock(nn.Module):
 class SimpleEncoder(nn.Module):
     def __init__(self, nc, cls_ch, k_sz):
         super().__init__()
-        self.conv = nn.Conv2d(3, 1 * nc, k_sz, 1, 1) # 128 x 128
-        self.block1 = SimpleBlock(1 * nc, 2 * nc, cls_ch, k_sz) # 64 x 64
-        self.block2 = SimpleBlock(2 * nc, 4 * nc, cls_ch, k_sz) # 32 x 32
-        self.block3 = SimpleBlock(4 * nc, 8 * nc, cls_ch, k_sz) # 16 x 16
-        self.block4 = SimpleBlock(8 * nc, 16 * nc, cls_ch, k_sz) # 16 x 16
-        self.block5 = SimpleBlock(16 * nc, 32 * nc, cls_ch, k_sz) # 16 x 16
+        self.conv = nn.Conv2d(3, 1 * nc, k_sz, 1, 1)  # 128 x 128
+        self.block1 = SimpleBlock(1 * nc, 2 * nc, cls_ch, k_sz)  # 64 x 64
+        self.block2 = SimpleBlock(2 * nc, 4 * nc, cls_ch, k_sz)  # 32 x 32
+        self.block3 = SimpleBlock(4 * nc, 8 * nc, cls_ch, k_sz)  # 16 x 16
+        self.block4 = SimpleBlock(8 * nc, 16 * nc, cls_ch, k_sz)  # 16 x 16
+        self.block5 = SimpleBlock(16 * nc, 32 * nc, cls_ch, k_sz)  # 16 x 16
         return
 
     def forward(self, x, c):
         x = F.relu(self.conv(x), True)
-        x = F.avg_pool2d(x, [2, 2]) # 128 x 128
+        x = F.avg_pool2d(x, [2, 2])  # 128 x 128
         x = F.relu(self.block1(x, c), True)
-        x = F.avg_pool2d(x, [2, 2]) # 64 x 64
+        x = F.avg_pool2d(x, [2, 2])  # 64 x 64
         x = F.relu(self.block2(x, c), True)
-        x = F.avg_pool2d(x, [2, 2]) # 32 x 32
+        x = F.avg_pool2d(x, [2, 2])  # 32 x 32
         x = F.relu(self.block3(x, c), True)
-        x = F.avg_pool2d(x, [2, 2]) # 16 x 16
+        x = F.avg_pool2d(x, [2, 2])  # 16 x 16
         x = F.relu(self.block4(x, c), True)
-        x = F.avg_pool2d(x, [2, 2]) # 8 x 8
+        x = F.avg_pool2d(x, [2, 2])  # 8 x 8
         x = self.block5(x, c)
         return x
 
@@ -140,7 +139,6 @@ class Encoder(nn.Module):
         else:
             self.resnet = SimpleEncoder(64, 128, 3)
 
-        #self.layer1 = SimpleBlock(1024, 2048, 128, 3)
         self.layer1 = SimpleBlock(2048, 2048, 128, 3)
         self.layer2 = SimpleBlock(2048, 2048, 128, 3)
         self.layer3 = SimpleBlock(2048, 2048, 128, 3)
@@ -150,7 +148,7 @@ class Encoder(nn.Module):
     def forward(self, x, c, st_idx=0, en_idx=5):
         assert en_idx <= 5
         assert st_idx >= 0
-        #print(x.size())
+        # print(x.size())
         if st_idx <= 0:
             if self.use_resnet50:
                 x = self.resnet(x)

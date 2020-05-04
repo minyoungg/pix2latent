@@ -10,9 +10,9 @@ class Detector():
         self.model.float().cuda().eval()
         # maskrcnn expects [0, 1] range
         self.transform = transforms.Compose([
-                            transforms.ToPILImage(),
-                            transforms.ToTensor(),
-                            ])
+            transforms.ToPILImage(),
+            transforms.ToTensor(),
+        ])
         return
 
     def prep(self, im, is_tensor=True):

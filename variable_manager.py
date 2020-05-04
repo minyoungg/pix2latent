@@ -23,7 +23,6 @@ def str_to_dtype(precision):
     return dtype
 
 
-
 def get_opt_fn(opt_name):
     """
     Returns gradient optimizer by name. Add to list if needed. Any optimizer
@@ -39,10 +38,9 @@ def get_opt_fn(opt_name):
         # https://github.com/hjmshi/PyTorch-LBFGS
         # http://sagecal.sourceforge.net/pytorch/index.html
         return lambda params, lr, eps: \
-                    optim.LBFGS(params, lr=lr, line_search_fn='strong_wolfe')
+            optim.LBFGS(params, lr=lr, line_search_fn='strong_wolfe')
 
     raise NotImplementedError('Does not support: {}'.format(opt_name))
-
 
 
 class VariableManager():
@@ -61,7 +59,6 @@ class VariableManager():
         self.optimize_cv = self.cv_search_method != 'none'
         return
 
-
     def vars_to_param(self, variables):
         """ Convert variable dict to torch optimizer friendly format  """
         opt_params = []
@@ -73,10 +70,9 @@ class VariableManager():
                 continue
 
             for i in range(len(v['data'])):
-                opt_params.append({'params':v['data'][i].requires_grad_(),
-                                   'lr':v['lr']})
+                opt_params.append({'params': v['data'][i].requires_grad_(),
+                                   'lr': v['lr']})
         return opt_params
-
 
     def set_default(self, num_seeds=None, z=None, cv=None, t=None, target=None,
                     weight=None):
@@ -112,7 +108,6 @@ class VariableManager():
             assert num_seeds > 0
             self.num_seeds = num_seeds
         return
-
 
     def init(self, num_seeds=None, target=None, weight=None, z=None, cv=None,
              t=None, precision='float'):
@@ -162,7 +157,7 @@ class VariableManager():
 
         if hasattr(self, 'z') and z is None:
             z = self.z.clone() + \
-                    self.z_sigma * sample_truncated_normal(num_seeds, 2.0)
+                self.z_sigma * sample_truncated_normal(num_seeds, 2.0)
         else:
             if z is None:
                 z = sample_truncated_normal(num_seeds, 2.0)
@@ -200,7 +195,6 @@ class VariableManager():
         # --- cast to desired precision --- #
         target, weight, z, cv, t, eps = self.cast(target, weight, z, cv, t)
 
-
         # --- construct variable object --- #
         variables = edict()
         variables.z = edict({'data': list(z),
@@ -211,7 +205,6 @@ class VariableManager():
                               'lr': self.cv_lr,
                               'requires_grad': self.optimize_cv})
 
-
         variables.target = edict({'data': list(target),
                                   'lr': None,
                                   'requires_grad': None})
@@ -219,7 +212,6 @@ class VariableManager():
         variables.weight = edict({'data': list(weight),
                                   'lr': None,
                                   'requires_grad': None})
-
 
         if t is not None or self.optimize_t:
             if checks.is_single_1d(t):
@@ -237,8 +229,8 @@ class VariableManager():
 
     def cast(self, *args):
         """ Casts all argument to specified precision. """
-        casted = [arg if arg is None else arg.type(self.dtype).cuda() \
-                    for arg in args]
+        casted = [arg if arg is None else arg.type(self.dtype).cuda()
+                  for arg in args]
 
         # For numerical stability
         if self.precision == 'half':
@@ -271,9 +263,9 @@ def override_variables(variables, override_variables):
     for k, v in override_variables:
         for i in range(len(v)):
             assert len(variables[k].data) == len(v), \
-              '{}: {} vs {}'.format(k, np.shape(variables[k].data), np.shape(v))
+                '{}: {} vs {}'.format(k, np.shape(variables[k].data), np.shape(v))
 
-            try: # hacky way to check if override vars is numpy or pytorch.
+            try:  # hacky way to check if override vars is numpy or pytorch.
                 _v = torch.from_numpy(v[i])
             except:
                 _v = v[i]
@@ -282,7 +274,7 @@ def override_variables(variables, override_variables):
             new_var_size = variables[k].data[i].data.size()
 
             assert var_size == new_var_size, \
-                    e_msg.format(k, var_size, new_var_size)
+                e_msg.format(k, var_size, new_var_size)
 
             dtype = variables[k].data[i].data.dtype
             variables[k].data[i].data = _v.cuda().to(dtype)
@@ -295,10 +287,10 @@ def split_vars(vars, size):
     split_vars = []
     ignore = ['opt', 'num_seeds']
     for i in range(num_splits):
-        sub_vars = edict({k: {'data': v.data[i * size : (i + 1) * size],
+        sub_vars = edict({k: {'data': v.data[i * size: (i + 1) * size],
                               'lr': v.lr,
                               'requires_grad': v.requires_grad}
-                          for k, v in vars.items() \
+                          for k, v in vars.items()
                           if v is not None and k not in ignore})
         sub_vars.opt = vars.opt
         split_vars.append(sub_vars)

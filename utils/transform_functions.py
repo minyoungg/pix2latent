@@ -19,6 +19,7 @@ class ComposeTransform():
     scale the t_parameter as eact parameters will live at a different scale.
     If the weights are not provided, default weight of 1 will be used.
     """
+
     def __init__(self, transform_list):
         assert type(transform_list) == list
         self.transform_list = []
@@ -59,7 +60,7 @@ class ComposeTransform():
         for i, (fn, fn_weight) in enumerate(self.transform_list):
             t_sz = len(fn.t)
             if (only_spatial and fn.is_spatial) or not only_spatial:
-                t_param = t[:, t_i:t_i+t_sz]
+                t_param = t[:, t_i:t_i + t_sz]
                 t_mu = torch.from_numpy(self._t[i]).type_as(t_param)
                 t_param = self.reweight(t_param, fn_weight, t_mu)
                 ims = fn(ims, t_param, invert=invert)
@@ -68,7 +69,7 @@ class ComposeTransform():
 
     def __str__(self):
         fmt = '<ComposeTransform\n\t{}\n>'.format(
-                    '\n\t'.join([f[0].__str__() for f in self.transform_list]))
+            '\n\t'.join([f[0].__str__() for f in self.transform_list]))
         return fmt
 
 
@@ -77,6 +78,7 @@ class ComposeTransform():
 # Since lambda functions cant be pickled easily.
 def _negate(x):
     return -x
+
 
 def _invert(x):
     return 1.0 / x
@@ -88,6 +90,7 @@ class ColorTransform(object):
     is not differentiable. A differentiable version could be implemented but
     since we use BasinCMA we use the default PyTorch/PIL color transfomration.
     """
+
     def __init__(self, fn, t=[1], t_range=(0.667, 1.5), t_inv_fn=None,
                  optimize=True):
         """

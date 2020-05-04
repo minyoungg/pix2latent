@@ -29,13 +29,13 @@ pip install -r requirements.txt
 - <b>Clone [LPIPS](https://github.com/richzhang/PerceptualSimilarity)</b>
 
   The code uses perceptual similarity loss. We need to clone the LPIPS repo into this directory.
-```bash
-git clone https://github.com/richzhang/PerceptualSimilarity
-```
-The path should be in the following format ... or you can set the path manually in `init_paths.py`
-```bash
-./GAN-Transform-and-Project/PerceptualSimilarity
-```
+  ```bash
+  git clone https://github.com/richzhang/PerceptualSimilarity
+  ```
+  The path should be in the following format ... or you can set the path manually in `init_paths.py`
+  ```bash
+  ./GAN-Transform-and-Project/PerceptualSimilarity
+  ```
 
 - <b>Download encoder weights</b> (optional)
 
@@ -53,10 +53,10 @@ We provide several demos for our project. If you do not wish to use the encoder,
 - <b>Jupyter demo</b>: A jupyter lab/notebook demo is available in [example.ipynb](example.ipynb)
 
 - <b>Command line</b>: To run our code from command line
-```bash
-CUDA_VISIBLE_DEVICES=$GPU_ID python demo.py --im=$PATH_TO_IMAGE
-```
-To see all valid options run `python demo.py --help`
+  ```bash
+  CUDA_VISIBLE_DEVICES=$GPU_ID python demo.py --im=$PATH_TO_IMAGE
+  ```
+  To see all valid options run `python demo.py --help`
 
 - <b>Streamlit interactive demo</b>:  
   We provide an interactive demo using Streamlit.

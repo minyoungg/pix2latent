@@ -1,14 +1,9 @@
 import numpy as np
-import copy
-import cv2
 
 import torch
-import torch.nn.functional as F
 
 from im_utils import binarize, to_image, make_grid
-from variable_manager import sample_truncated_normal, override_variables
 from cma_optimizer import CMA
-import loss_functions as LF
 from misc import to_numpy, progress_print
 from optimization_core import step
 
@@ -62,14 +57,14 @@ def search_transform(model, transform_fn, var_manager, loss_fn, meta_steps=30,
     """
 
     # -- setup CMA -- #
-    var_manager.optimize_t  = True
+    var_manager.optimize_t = True
     t_outs, outs, step_iter = [], [], 0
     total_steps = meta_steps * grad_steps
     t_cma_opt = CMA(mu=var_manager.t.cpu().numpy()[0], sigma=t_sigma)
 
     if t_cma_opt.batch_size() > var_manager.num_seeds:
         import nevergrad as ng
-        print('Number of seeds is less than that required by PyCMA ' +\
+        print('Number of seeds is less than that required by PyCMA ' +
               'transformation search. Using Nevergrad CMA instead.')
         batch_size = var_manager.num_seeds
         opt_fn = ng.optimizers.registry['CMA']

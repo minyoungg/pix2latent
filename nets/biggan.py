@@ -3,8 +3,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import os, sys, types, time, random, warnings
-import numpy as np
 
 import torch
 import torch.nn as nn
@@ -26,7 +24,7 @@ class BigGAN(nn.Module):
         with HiddenPrints():
             biggan = ppb.BigGAN.from_pretrained('biggan-deep-256')
             self.embeddings = biggan.embeddings
-            self.generator  = biggan.generator
+            self.generator = biggan.generator
         return
 
     def forward(self, z=None, c=None, truncation=1.0, embed_class=False):

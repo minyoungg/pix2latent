@@ -1,9 +1,6 @@
 import torch
-import numpy as np
-import cv2
 
 from variable_manager import split_vars
-from im_utils import to_image
 
 
 def step(model, vars, loss_fn, transform_fn=None, optimize=True,
@@ -45,7 +42,6 @@ def step(model, vars, loss_fn, transform_fn=None, optimize=True,
             _target = torch.stack(vars.target.data).repeat(b_sz, 1, 1, 1)
             _weight = torch.stack(vars.weight.data).repeat(b_sz, 1, 1, 1)
 
-
             if hasattr(_vars, 't'):
                 t = torch.stack(_vars.t.data)
 
@@ -55,20 +51,16 @@ def step(model, vars, loss_fn, transform_fn=None, optimize=True,
                 _target = transform_fn(_target, t)
                 _weight = transform_fn(_weight, t, only_spatial=True)
 
-
             if optimize:
                 _vars.opt.zero_grad()
-
 
             # (1) clamp z
             for i in range(len(_vars.z.data)):
                 _vars.z.data[i].data.clamp_(-2.0, 2.0)
 
-
             # (2) forward pass
             z, cv = torch.stack(_vars.z.data), torch.stack(_vars.cv.data)
             out = model(z=z, c=cv, truncation=1.0)
-
 
             # (3) compute loss
             loss = loss_fn(out, _target, _weight).view(b_sz, -1).mean(1)
@@ -78,9 +70,8 @@ def step(model, vars, loss_fn, transform_fn=None, optimize=True,
 
             loss = loss.detach().cpu().numpy()
 
-
         # (4) optimize
-        if  optimize:
+        if optimize:
             _vars.opt.step(closure)
         else:
             with torch.no_grad():

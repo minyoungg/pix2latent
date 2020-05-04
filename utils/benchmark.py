@@ -18,11 +18,11 @@ class Benchmark():
                 List of metrics to compute. For perceptual metrics, the
                 model is only initialized after evaluate has been called.
         """
-        valid_metrics = {'l1':LF.ReconstructionLoss(loss_type='l1'),
-                         'l2':LF.ReconstructionLoss(loss_type='l2'),
-                         'alex':lambda: LF.PerceptualLoss('alex'),
-                         'squeeze':lambda: LF.PerceptualLoss('squeeze'),
-                         'vgg':lambda: LF.PerceptualLoss('vgg')}
+        valid_metrics = {'l1': LF.ReconstructionLoss(loss_type='l1'),
+                         'l2': LF.ReconstructionLoss(loss_type='l2'),
+                         'alex': lambda: LF.PerceptualLoss('alex'),
+                         'squeeze': lambda: LF.PerceptualLoss('squeeze'),
+                         'vgg': lambda: LF.PerceptualLoss('vgg')}
 
         self.metrics = {}
         for m in metrics:

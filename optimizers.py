@@ -8,14 +8,14 @@ from im_utils import binarize, to_image, make_grid
 from variable_manager import override_variables
 from misc import to_numpy, progress_print, cprint
 import torch
-import numpy as np
 
 
-### Base classes for Optimizers
+# Base classes for Optimizers
 
 class BaseOptimizer():
     """ Base template for gradient optimization """
-    def __init__(self, model, log=True, log_iter=10, max_batch_size=9, \
+
+    def __init__(self, model, log=True, log_iter=10, max_batch_size=9,
                  *args, **kwargs):
         super().__init__()
         self.max_batch_size = max_batch_size
@@ -40,12 +40,12 @@ class BaseOptimizer():
 
     def step(self, variables, optimize=True):
         self.out, self.loss, self.other = step(
-                                            self.model, variables,
-                                            loss_fn=self.loss_fn,
-                                            transform_fn=self.transform_fn,
-                                            optimize=optimize,
-                                            max_batch_size=self.max_batch_size
-                                            )
+            self.model, variables,
+            loss_fn=self.loss_fn,
+            transform_fn=self.transform_fn,
+            optimize=optimize,
+            max_batch_size=self.max_batch_size
+        )
         return self.out, self.loss, self.other
 
     def optimize(self):
@@ -54,7 +54,7 @@ class BaseOptimizer():
     def benchmark(self, variables, out):
         if variables.t is not None:
             out = self.transform_fn(
-                        out, torch.stack(variables.t.data), invert=True)
+                out, torch.stack(variables.t.data), invert=True)
         res = self.bm.evaluate(out, variables.target.data[0].unsqueeze(0),
                                binarize(variables.weight.data[0]).unsqueeze(0))
         return res
@@ -139,9 +139,7 @@ class BaseCMAOptimizer():
         return
 
 
-
-
-### Useable Optimizers
+# Useable Optimizers
 
 
 class GradientOptimizer(BaseOptimizer):
@@ -149,6 +147,7 @@ class GradientOptimizer(BaseOptimizer):
     Basic gradient optimizer. Compatible with any gradient-based optimizer.
     The optimiation method defined in variable_manager is used.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         return
@@ -189,6 +188,7 @@ class CMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
     CMA optimizer. Gradient descent can be used to further optimize the seeds
     from CMA.
     """
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         return
@@ -260,6 +260,7 @@ class BasinCMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
     """
     Optimize using BasinCMA. BasinCMA interleaves CMA updates with ADAM updates.
     """
+
     def __init__(self,  *args, **kwargs):
         super().__init__(*args, **kwargs)
         return
@@ -301,7 +302,6 @@ class BasinCMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
                 self.step(variables, optimize=True)
                 i += 1
 
-
                 if self.log:
                     if ((i + 1) % self.log_iter == 0) or (i + 1 == grad_steps):
                         self.log_result(variables, i + 1)
@@ -320,7 +320,7 @@ class BasinCMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
         return variables, self.out, self.loss
 
 
-## ---  Experimental code below --- ##
+# ---  Experimental code below --- ##
 
 
 class NevergradOptimizer(BaseOptimizer):
@@ -334,7 +334,7 @@ class NevergradOptimizer(BaseOptimizer):
             seq_msg = '{} is a sequential method. batch size is set to 1'
             cprint(seq_msg.format(self.method), 'y')
         assert self.method in self.valid_methods, \
-                'unknown nevergrad method: {}'.format(self.method)
+            'unknown nevergrad method: {}'.format(self.method)
         return
 
     def optimize(self, var_manager, meta_steps, grad_steps=300,
@@ -381,7 +381,7 @@ class NevergradOptimizer(BaseOptimizer):
                 _z = [opt.ask() for _ in range(var_manager.num_seeds)]
                 z = np.concatenate([np.array(x.args) for x in _z])
 
-            override_variables(variables, [['z', z]]) # 18 seeds
+            override_variables(variables, [['z', z]])  # 18 seeds
             self.step(variables, optimize=False)
             i += 1
 
@@ -400,7 +400,6 @@ class NevergradOptimizer(BaseOptimizer):
             else:
                 if (i + 1) % self.show_iter == 0:
                     progress_print('optimize', i + 1, meta_steps, 'c')
-
 
         # -- Finetune the final seeds with ADAM -- #
         variables = var_manager.init()
@@ -438,7 +437,7 @@ class NevergradHybridOptimizer(BaseOptimizer):
             seq_msg = '{} is a sequential method. batch size is set to 1'
             cprint(seq_msg.format(self.method), 'y')
         assert self.method in self.valid_methods, \
-                'unknown nevergrad method: {}'.format(self.method)
+            'unknown nevergrad method: {}'.format(self.method)
         return
 
     def optimize(self, var_manager, meta_steps, grad_steps,
@@ -477,7 +476,6 @@ class NevergradHybridOptimizer(BaseOptimizer):
 
         self.losses, self.outs, i = [], [], 0
         total_steps = meta_steps * grad_steps + finetune_grad_steps
-
 
         # -- Start optimization -- #
         for meta_iter in range(meta_steps + 1):

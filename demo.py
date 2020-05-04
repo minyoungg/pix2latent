@@ -10,7 +10,6 @@ import torch.nn as nn
 
 import os
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 
 from variable_manager import VariableManager
@@ -19,7 +18,7 @@ import loss_functions as LF
 import copy
 import optimizers
 import transform_functions as TF
-from im_utils import to_image, make_grid, binarize
+from im_utils import to_image, binarize
 from biggan import BigGAN
 
 from transform_utils import compute_pre_alignment
@@ -31,7 +30,6 @@ import imagenet_tools
 from classifier import Classifier
 from encoder import load_biggan_encoder
 from detector import Detector
-
 
 
 class TransformableBasinCMAProjection():
@@ -67,9 +65,8 @@ class TransformableBasinCMAProjection():
         self.rloss_fn = LF.ReconstructionLoss()
         self.ploss_fn = LF.PerceptualLoss(net=lpips_net, precision='float')
         self.loss_fn = lambda x, y, m: \
-                        self.rloss_fn(x, y, m) + 10. * self.ploss_fn(x, y, m)
+            self.rloss_fn(x, y, m) + 10. * self.ploss_fn(x, y, m)
         return
-
 
     def prepare_input(self, im, cls_lbl, mask=None, mask_threshold=0.3):
         """
@@ -136,7 +133,6 @@ class TransformableBasinCMAProjection():
         im_tensor = 2.0 * (im_tensor - 0.5)
         im_tensor = im_tensor.float().cuda()
         return im_tensor, cv, mask_tensor
-
 
     def __call__(self,
                  im,
@@ -211,15 +207,14 @@ class TransformableBasinCMAProjection():
                 print('Found class label from auto_detect()')
                 cls_lbl = self._cls_lbl
                 if remove_cache:
-                    del self._cls_lbl # For safety reasons
+                    del self._cls_lbl  # For safety reasons
 
         if mask is None:
             if hasattr(self, '_mask'):
                 print('Found mask from auto_detect()')
                 mask = self._mask
                 if remove_cache:
-                    del self._mask # For safety reasons
-
+                    del self._mask  # For safety reasons
 
         # -- Prepare variables -- #
         im, cv, mask = self.prepare_input(im, cls_lbl, mask)
@@ -228,7 +223,6 @@ class TransformableBasinCMAProjection():
                                       precision='float',
                                       cv_search_method='grad',
                                       optimize_t=False)
-
 
         # -- Transformation -- #
         transform_fn = TF.ComposeTransform([
@@ -243,28 +237,26 @@ class TransformableBasinCMAProjection():
         var_manager.set_default(num_seeds=num_seeds, cv=cv, t=t,
                                 target=im, weight=mask)
 
-
         # -- Optimizer -- #
         if num_seeds == 18:
             opt = optimizers.BasinCMAOptimizer(
-                                        model=self.model,
-                                        max_batch_size=max_batch_size,
-                                        log=log,
-                                        )
+                model=self.model,
+                max_batch_size=max_batch_size,
+                log=log,
+            )
         else:
             print('Number of seed is set below 18, using Nevergrad CMA.')
             # Note:
             # This performs worse than CMA implementation above.
             opt = optimizers.NevergradHybridOptimizer(
-                                        method='CMA',
-                                        model=self.model,
-                                        max_batch_size=max_batch_size,
-                                        log=log,
-                                        )
+                method='CMA',
+                model=self.model,
+                max_batch_size=max_batch_size,
+                log=log,
+            )
 
         opt.register_transform_fn(transform_fn)
         opt.register_loss_fn(self.loss_fn)
-
 
         # -- Search transformation -- #
         print('Searching for transformation')
@@ -283,17 +275,16 @@ class TransformableBasinCMAProjection():
 
         _var_manager = copy.deepcopy(var_manager)
         t, _, _ = search_transform(
-                               model=self.model,
-                               transform_fn=transform_fn,
-                               var_manager=_var_manager,
-                               loss_fn=self.loss_fn,
-                               meta_steps=transform_adam_steps,
-                               grad_steps=transform_cma_steps,
-                               pbar=st_transform_pbar,
-                               log=log,
-                               )
+            model=self.model,
+            transform_fn=transform_fn,
+            var_manager=_var_manager,
+            loss_fn=self.loss_fn,
+            meta_steps=transform_adam_steps,
+            grad_steps=transform_cma_steps,
+            pbar=st_transform_pbar,
+            log=log,
+        )
         var_manager.set_default(t=t)
-
 
         # -- Encoder -- #
         z_init = None
@@ -307,14 +298,12 @@ class TransformableBasinCMAProjection():
             var_manager.set_default(z=(z_init, 0.5))
             z_init = (to_numpy(z_init[0]), 0.5)
 
-
         # -- Optimize -- #
         variables, outs, losses = opt.optimize(
-                            var_manager, cma_steps, adam_steps, finetune_steps,
-                            128, z_init, pbar=st_project_pbar)
+            var_manager, cma_steps, adam_steps, finetune_steps,
+            128, z_init, pbar=st_project_pbar)
 
         return variables, outs, losses, transform_fn
-
 
     def auto_detect(self, im, mask_type='segmentation'):
         if not hasattr(self, 'detector'):
@@ -325,7 +314,7 @@ class TransformableBasinCMAProjection():
 
         candidates = self.detector(im, is_tensor=False)
 
-        if candidates == None:
+        if candidates is None:
             print('Did not find any valid object in the image.')
 
         else:
@@ -358,7 +347,7 @@ class TransformableBasinCMAProjection():
                 if pred_wnid in valid_wnids:
                     print(('Found a match. Classified class {} is in the ' +
                            'detected class {}').format(
-                           pred_cls_noun, det_cls_noun))
+                        pred_cls_noun, det_cls_noun))
 
                     if mask_type == 'segmentation':
                         m = det_masks[idx] > 0.5
@@ -380,16 +369,15 @@ class TransformableBasinCMAProjection():
                 print(('Classification and Detection is inconsistent. ' +
                        'Classified class {} is not an element of the ' +
                        'detected class {}. Trying next candidate').format(
-                       pred_cls_noun, det_cls_noun))
+                    pred_cls_noun, det_cls_noun))
 
         print('Auto-detection failed. All candidates are invalid.')
 
         cls_lbl = self.classifier(im, as_onehot=False, is_tensor=False)
         self._cls_lbl = cls_lbl
         print('Mask is set to None and the predicted class is: {} ({})'.format(
-                cls_lbl, IMAGENET_LABEL_TO_NOUN[cls_lbl]))
+            cls_lbl, IMAGENET_LABEL_TO_NOUN[cls_lbl]))
         return
-
 
 
 if __name__ == '__main__':
@@ -409,8 +397,8 @@ if __name__ == '__main__':
                         help='Number of seeds to optimize')
     parser.add_argument('--max_batch_size', type=int,
                         default=9,
-                        help='Maximum mini-batch size. Need to tune based on '+\
-                             'the amount of GPU memory you have. ' +\
+                        help='Maximum mini-batch size. Need to tune based on ' +
+                             'the amount of GPU memory you have. ' +
                              'Rough estimate: GTX1080=6, GTX2080TI=9, V100=18'
                         )
     parser.add_argument('--encoder_init', action='store_true',
@@ -438,21 +426,21 @@ if __name__ == '__main__':
         cls_lbl = solver._cls_lbl
 
     variables, outs, losses, transform_fn = \
-                            solver(im, mask=mask, cls_lbl=cls_lbl,
-                                   encoder_init=args.encoder_init,
-                                   num_seeds=args.num_seeds,
-                                   max_batch_size=args.max_batch,
-                                   log=False)
+        solver(im, mask=mask, cls_lbl=cls_lbl,
+               encoder_init=args.encoder_init,
+               num_seeds=args.num_seeds,
+               max_batch_size=args.max_batch,
+               log=False)
 
     idx = np.argmin(losses).squeeze()
     z = torch.stack(variables.z.data)
     cv = torch.stack(variables.cv.data)
 
     with torch.no_grad():
-        out = solver.model(z=z[idx:idx+1], c=cv[idx:idx+1])
+        out = solver.model(z=z[idx:idx + 1], c=cv[idx:idx + 1])
         out_im = to_image(out)[0]
 
-    t = torch.stack(variables.t.data)[idx:idx+1]
+    t = torch.stack(variables.t.data)[idx:idx + 1]
 
     inv_im = to_image(transform_fn(out.cpu(), t.cpu(), invert=True))[0]
     blended = poisson_blend(im[:, :, [2, 1, 0]], mask, inv_im)

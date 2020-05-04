@@ -5,7 +5,6 @@ from __future__ import unicode_literals
 
 import torch
 import numpy as np
-import warnings
 import cv2
 import os
 import imageio
@@ -13,8 +12,8 @@ import skvideo.io
 import torchvision
 
 
-make_grid = lambda x : \
-        torchvision.utils.make_grid(x, int(np.sqrt(x.size(0))), pad_value=-1)
+def make_grid(x): return \
+    torchvision.utils.make_grid(x, int(np.sqrt(x.size(0))), pad_value=-1)
 
 
 def to_image(output, to_cpu=True, denormalize=True, jpg_format=True,
@@ -75,7 +74,7 @@ def binarize(mask, min=0.0, max=1.0, eps=1e-3):
 
 def vis_gif(save_path, ims, duration=20.0):
     """ dumps a list of images into gif """
-    dpf = duration / len(ims) # limited to 12fps
+    dpf = duration / len(ims)  # limited to 12fps
     imageio.mimsave(save_path, tracked_ims, duration=dpf)
     return
 
@@ -83,7 +82,7 @@ def vis_gif(save_path, ims, duration=20.0):
 def add_border(image, color='r', border_size=5, cv2_format=True):
     """ adds border around an image """
     if cv2_format:
-        r, g, b  = [[0, 0, 255]], [[0, 255, 0]], [[255, 0, 0]]
+        r, g, b = [[0, 0, 255]], [[0, 255, 0]], [[255, 0, 0]]
     else:
         r, g, b = [[255, 0, 0]], [[0, 255, 0]], [[0, 0, 255]]
 
@@ -176,16 +175,16 @@ def poisson_blend(target, mask, generated):
         mask = mask / 255.
 
     obj_center, _ = compute_stat_from_mask(
-                binarize(torch.Tensor(mask).permute(2, 0, 1).unsqueeze(0)))
+        binarize(torch.Tensor(mask).permute(2, 0, 1).unsqueeze(0)))
 
     mask = (mask > 0.5).astype(np.float)
 
     blended_result = cv2.seamlessClone(
-                                    generated.astype(np.uint8),
-                                    target.astype(np.uint8),
-                                    (255 *  mask[:, :, 0]).astype(np.uint8),
-                                    obj_center[::-1],
-                                    cv2.NORMAL_CLONE
-                                    )
+        generated.astype(np.uint8),
+        target.astype(np.uint8),
+        (255 * mask[:, :, 0]).astype(np.uint8),
+        obj_center[::-1],
+        cv2.NORMAL_CLONE
+    )
 
     return blended_result

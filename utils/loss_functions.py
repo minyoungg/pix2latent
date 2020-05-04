@@ -3,13 +3,10 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys, os, os.path as osp
+
 import models
 import torch
-import numpy as np
 from torch import nn
-from torch.nn import functional as F
-import warnings
 import checks
 from misc import HiddenPrints
 
@@ -43,8 +40,8 @@ def masked_l1_loss(out, target, mask):
         target = target.repeat(out.size(0), 1, 1, 1)
 
     loss = l1_loss(out, target)
-    n = torch.sum(loss * mask, [1,2,3])
-    d = torch.sum(mask, [1,2,3])
+    n = torch.sum(loss * mask, [1, 2, 3])
+    d = torch.sum(mask, [1, 2, 3])
     return (n / d)
 
 
@@ -55,13 +52,14 @@ def masked_l2_loss(out, target, mask):
     if target.size(0) == 1:
         target = target.repeat(out.size(0), 1, 1, 1)
     loss = l2_loss(out, target)
-    n = torch.sum(loss * mask, [1,2,3])
-    d = torch.sum(mask, [1,2,3])
+    n = torch.sum(loss * mask, [1, 2, 3])
+    d = torch.sum(mask, [1, 2, 3])
     return (n / d)
 
 
 class ReconstructionLoss(nn.Module):
     """ Reconstruction loss with spatial weighting """
+
     def __init__(self, loss_type='l1'):
         super(ReconstructionLoss, self).__init__()
         if loss_type in ['l1', 1]:
@@ -76,8 +74,8 @@ class ReconstructionLoss(nn.Module):
         checks.check_loss_input(im0, im1, w)
         loss = self.loss_fn(im0, im1)
         if w is not None:
-            n = torch.sum(loss * w, [1,2,3])
-            d = torch.sum(w, [1,2,3])
+            n = torch.sum(loss * w, [1, 2, 3])
+            d = torch.sum(w, [1, 2, 3])
             loss = n / d
         return loss
 
@@ -107,8 +105,8 @@ class PerceptualLoss(nn.Module):
         # lpips takes the sum of each spatial map
         loss = self.lpips(im0, im1)
         if w is not None:
-            n = torch.sum(loss * w, [1,2,3])
-            d = torch.sum(w, [1,2,3])
+            n = torch.sum(loss * w, [1, 2, 3])
+            d = torch.sum(w, [1, 2, 3])
             loss = n / d
         return loss
 

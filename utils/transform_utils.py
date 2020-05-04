@@ -7,7 +7,6 @@ from __future__ import unicode_literals
 import numpy as np
 
 import torch
-import torch.nn.functional as F
 
 import transform_functions as TF
 from im_utils import binarize
@@ -24,7 +23,6 @@ def setup_transform_fn(args, weight):
         if args.align:
             transform_list += [(TF.SpatialTransform(optimize=False), 1.0)]
 
-
     # -- Color transformation -- #
     # Ordered by information preservability
 
@@ -38,7 +36,6 @@ def setup_transform_fn(args, weight):
         transform_list += [(TF.BrightnessTransform(), 5.0)]
     if 'contrast' in args.color_transform:
         transform_list += [(TF.ContrastTransform(), 5.0)]
-
 
     # Compose multiple transformations
     if len(transform_list) > 0:
@@ -101,12 +98,12 @@ def compute_stat_from_mask(mask):
 
 def bbox_from_mask(mask):
     assert len(list(mask.size())) == 4, \
-            'expected 4d tensor but got {}'.format(len(list(mask.size())))
+        'expected 4d tensor but got {}'.format(len(list(mask.size())))
     try:
         tlc_h = (mask.squeeze().sum(1) != 0).nonzero()[0].item()
         brc_h = (mask.squeeze().sum(1) != 0).nonzero()[-1].item()
     except:
-        tlc_h, brc_h = 0, mask.size(2) # max range if failed
+        tlc_h, brc_h = 0, mask.size(2)  # max range if failed
 
     try:
         tlc_w = (mask.squeeze().sum(0) != 0).nonzero()[0].item()

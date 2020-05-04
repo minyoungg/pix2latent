@@ -6,7 +6,8 @@ from __future__ import unicode_literals
 import warnings
 import torch
 import numpy as np
-import sys, os
+import sys
+import os
 from torch import nn
 import random
 
@@ -77,10 +78,10 @@ class bcolors:
     y = yellow = WARNING = '\033[93m'
     r = red = FAIL = '\033[91m'
     c = cyan = '\033[36m'
-    lb = lightblue ='\033[94m'
+    lb = lightblue = '\033[94m'
     p = pink = '\033[95m'
-    o = orange ='\033[33m'
-    lc = lightcyan ='\033[96m'
+    o = orange = '\033[33m'
+    lc = lightcyan = '\033[96m'
     end = ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'

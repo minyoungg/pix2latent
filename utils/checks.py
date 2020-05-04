@@ -7,8 +7,9 @@ import torch
 
 ## -- Assertion checks -- ##
 
+
 def check_input(x):
-    oob_msg = 'image is outside the range [-1, 1] but got {} {}'
+    # oob_msg = 'image is outside the range [-1, 1] but got {} {}'
     assert x.min() >= -1.0 or x.max() <= 1.0, oob.format(x.min(), x.max())
     assert x.size(0) == 1, 'only supports batch size 1 {}'.format(x.size())
     assert len(list(x.size())) == 4
@@ -24,7 +25,7 @@ def check_loss_input(im0, im1, w):
         assert im0.size(0) == im1.size(0)
 
     if w is not None and w.size(0) != 1:
-            assert im0.size(0) == w.size(0)
+        assert im0.size(0) == w.size(0)
     return
 
 

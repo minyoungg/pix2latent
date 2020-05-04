@@ -36,7 +36,7 @@ def query_subclass_by_name(query_noun='dog', verbose=True):
 
 def get_parent_wnid(wnid):
     """ Given wnid get parent wnid """
-    return 'n'+str(synset_to_wnid(wnid_to_synset(wnid).hypernyms()[0])).zfill(8)
+    return 'n' + str(synset_to_wnid(wnid_to_synset(wnid).hypernyms()[0])).zfill(8)
 
 
 def synset_to_wnid(synset):
@@ -93,7 +93,7 @@ def read_synset_file(synset_words_path):
     Returns
         wnid_array - list of wnid strings
     """
-    wnid_array  = [line.split(' ')[0] for line in open(synset_words_path, 'r')]
+    wnid_array = [line.split(' ')[0] for line in open(synset_words_path, 'r')]
     return wnid_array
 
 
@@ -118,6 +118,7 @@ def wnid_statistics(wnid_arr):
     stats['min_depth'], stats['max_depth'] = np.min(depth_arr), np.max(depth_arr)
     return stats
 
+
 def get_coco_valid_wnids():
     wnids = {}
     for n in COCO_INSTANCE_CATEGORY_NAMES:
@@ -125,6 +126,7 @@ def get_coco_valid_wnids():
         if len(v) != 0:
             wnids[n] = v
     return wnids
+
 
 def get_pascal_valid_wnids():
     wnids = {}

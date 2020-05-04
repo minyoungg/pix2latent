@@ -4,11 +4,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import cv2
-import os, os.path as osp
+import os.path as osp
 import numpy as np
-import torch
 import torch.nn as nn
-from im_utils import to_image, make_video, binarize, make_grid
+from im_utils import to_image, make_video
 
 
 def save_result(save_dir, fn, collages, target, weight, out, vars, losses,
@@ -44,7 +43,7 @@ def save_result(save_dir, fn, collages, target, weight, out, vars, losses,
         make_video(osp.join(save_dir, '{}.transform.out.mp4'.format(fn)),
                    t_outs[1], duration=5)
 
-    exp_vars = {'vars':vars, 'transform': transform}
+    exp_vars = {'vars': vars, 'transform': transform}
     np.save(osp.join(save_dir, '{}.vars.npy'.format(fn)), exp_vars)
     return
 
