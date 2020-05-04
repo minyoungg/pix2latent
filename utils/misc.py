@@ -132,9 +132,3 @@ def progress_print(phase, i, j, color='c'):
     per = (100. * i) / j
     print('({}) progress {:.0f}% [{}/{}] '.format(p, per, i, j))
     return
-
-
-if __name__ == '__main__':
-    pbar = ProgressBar(50, 1)
-    for _ in range(100):
-        pbar()

@@ -9,8 +9,8 @@ import torch
 
 
 def check_input(x):
-    # oob_msg = 'image is outside the range [-1, 1] but got {} {}'
-    assert x.min() >= -1.0 or x.max() <= 1.0, oob.format(x.min(), x.max())
+    oob_msg = 'image is outside the range [-1, 1] but got {} {}'
+    assert x.min() >= -1.0 or x.max() <= 1.0, oob_msg.format(x.min(), x.max())
     assert x.size(0) == 1, 'only supports batch size 1 {}'.format(x.size())
     assert len(list(x.size())) == 4
     return

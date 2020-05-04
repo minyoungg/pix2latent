@@ -75,7 +75,7 @@ def binarize(mask, min=0.0, max=1.0, eps=1e-3):
 def vis_gif(save_path, ims, duration=20.0):
     """ dumps a list of images into gif """
     dpf = duration / len(ims)  # limited to 12fps
-    imageio.mimsave(save_path, tracked_ims, duration=dpf)
+    imageio.mimsave(save_path, ims, duration=dpf)
     return
 
 

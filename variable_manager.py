@@ -33,7 +33,7 @@ def get_opt_fn(opt_name):
     if opt_name == 'adam':
         return optim.Adam
 
-    elif opt_namee == 'lbfgs':
+    elif opt_name == 'lbfgs':
         # Consider using community version. Omitted for public release.
         # https://github.com/hjmshi/PyTorch-LBFGS
         # http://sagecal.sourceforge.net/pytorch/index.html

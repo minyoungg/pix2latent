@@ -169,7 +169,7 @@ class GradientOptimizer(BaseOptimizer):
             self.step(variables, optimize=True)
 
             if pbar is not None:
-                pbar.progress(i / total_steps)
+                pbar.progress(i / grad_steps)
 
             if self.log:
                 if ((i + 1) % self.log_iter == 0) or (i + 1 == grad_steps):
@@ -325,7 +325,7 @@ class BasinCMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
 
 class NevergradOptimizer(BaseOptimizer):
     def __init__(self, *args, **kwargs):
-        super().__init__(method, *args, **kwargs)
+        super().__init__(*args, **kwargs)
         self.method = kwargs['method']
         self.valid_methods = [x[0] for x in ng.optimizers.registry.items()]
         self.sequential_methods = ['SQPCMA', 'chainCMAPowell', 'Powell']
@@ -392,7 +392,7 @@ class NevergradOptimizer(BaseOptimizer):
             if self.is_sequential:
                 opt.tell(_z, self.loss[0])
             else:
-                for x, l in zip(_x, self.loss):
+                for z, l in zip(_z, self.loss):
                     opt.tell(z, l)
 
             if pbar is not None:

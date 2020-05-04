@@ -132,13 +132,7 @@ class Encoder(nn.Module):
     def __init__(self):
         super().__init__()
         self.layers = []
-        self.use_resnet50 = False
-        if self.use_resnet50:
-            # does worse
-            self.resnet = resnet50(pretrained=True)
-        else:
-            self.resnet = SimpleEncoder(64, 128, 3)
-
+        self.resnet = SimpleEncoder(64, 128, 3)
         self.layer1 = SimpleBlock(2048, 2048, 128, 3)
         self.layer2 = SimpleBlock(2048, 2048, 128, 3)
         self.layer3 = SimpleBlock(2048, 2048, 128, 3)
@@ -146,14 +140,14 @@ class Encoder(nn.Module):
         return
 
     def forward(self, x, c, st_idx=0, en_idx=5):
+        """
+        st_idx and en_idx is used to isolate layers.
+        there are cleaner ways to do this
+        """
         assert en_idx <= 5
         assert st_idx >= 0
-        # print(x.size())
         if st_idx <= 0:
-            if self.use_resnet50:
-                x = self.resnet(x)
-            else:
-                x = self.resnet(x, c)
+            x = self.resnet(x, c)
 
         if en_idx == 1:
             return x
