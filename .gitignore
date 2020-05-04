@@ -9,3 +9,4 @@ __pycache__/
 /PerceptualSimilarity
 .ipynb_checkpoints/
 /results
+nets/*.ckpt
