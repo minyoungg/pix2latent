@@ -3,14 +3,20 @@
 ### [project page](https://minyoungg.github.io/GAN-Transform-and-Project/) |   [paper]()
 
 
-<img src="./assets/comparison.png" width="800px"/>
+<img src="./assets/teaser.jpg" width="1000px"/>
 <br>
 
-
+Given a pre-trained BigGAN and a target image (left), our method uses gradient-free BasinCMA to transform the image and find a latent vector to closely reconstruct the image. Our method (top) can better fit the input image, compared to the baseline (bottom), which does not model image transformation and uses gradient-based ADAM optimization. Finding an accurate solution to the inversion problem allows us to further fine-tune the model weights to match the target image without losing downstream editing capabilities. For example, our method allows for changing the class of the object (top row), compared to the baseline (bottom).
 
 **Transforming and Projecting Images into Class-conditional Generative Networks**  
 [Minyoung Huh](http://minyounghuh.com/) &nbsp; [Richard Zhang](https://richzhang.github.io/) &nbsp; [Jun-Yan Zhu](https://people.csail.mit.edu/junyanz/) &nbsp; [Sylvain Paris](http://people.csail.mit.edu/sparis/) &nbsp; [Aaron Hertzmann](https://www.dgp.toronto.edu/~hertzman/)  
 MIT CSAIL &nbsp; Adobe Research  
+
+<img src="./assets/pipeline.jpg" width="1000px"/> <br>
+Our method first searches for a transformation to apply to the input target image. We then solve for the latent vector that closely resembles the object in the target image, using our proposed optimization method, also referred to as　''projection''. The generative model can then be further fine-tuned to reconstruct the missing details that the original model could not generate. Finally, we can edit the image by altering the latent code or the class vector (e.g., changing the bus to a car).
+
+
+
 
 ## Prerequisites
 The code was developed on

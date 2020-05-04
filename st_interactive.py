@@ -187,8 +187,6 @@ def main():
         step=5,
     )
 
-    # -- #
-
     start_optimization = st.sidebar.button('Optimize')
 
     if not start_optimization:

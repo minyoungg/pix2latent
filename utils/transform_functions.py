@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import torchvision.transforms.functional as TVF
 
 
-## --- Compose transformations --- ##
+# --- Compose transformations --- #
 
 class ComposeTransform():
     """
@@ -73,7 +73,7 @@ class ComposeTransform():
         return fmt
 
 
-## --- COLOR TRANSFORMATIONS --- #
+# --- COLOR TRANSFORMATIONS --- #
 
 # Since lambda functions cant be pickled easily.
 def _negate(x):
@@ -186,7 +186,7 @@ class ContrastTransform(ColorTransform):
         return
 
 
-## --- SPATIAL TRANSFORMATIONS --- #
+# --- SPATIAL TRANSFORMATIONS --- #
 
 
 class SpatialTransform():
