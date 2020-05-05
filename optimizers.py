@@ -15,9 +15,7 @@ import torch
 class BaseOptimizer():
     """ Base template for gradient optimization """
 
-    def __init__(self, model, log=True, log_iter=10, max_batch_size=9,
-                 *args, **kwargs):
-        super().__init__()
+    def __init__(self, model, log=True, log_iter=10, max_batch_size=9, **kwargs):
         self.max_batch_size = max_batch_size
         self.log = log
         self.log_iter = log_iter
@@ -84,7 +82,6 @@ class BaseCMAOptimizer():
                 this to True may result in better result but slightly slower
                 run-time.
         """
-        super().__init__()
         self.inverted_loss = True
         return
 
@@ -149,7 +146,7 @@ class GradientOptimizer(BaseOptimizer):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        BaseOptimizer.__init__(self, *args, **kwargs)
         return
 
     def optimize(self, var_manager, grad_steps, pbar=None):
@@ -190,7 +187,8 @@ class CMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
     """
 
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        BaseOptimizer.__init__(self, *args, **kwargs)
+        BaseCMAOptimizer.__init__(self)
         return
 
     def optimize(self, var_manager, meta_steps, grad_steps=0, cma_dim=128,
@@ -262,7 +260,8 @@ class BasinCMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
     """
 
     def __init__(self,  *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        BaseOptimizer.__init__(self, *args, **kwargs)
+        BaseCMAOptimizer.__init__(self)
         return
 
     def optimize(self, var_manager, meta_steps, grad_steps,
@@ -323,10 +322,23 @@ class BasinCMAOptimizer(BaseOptimizer, BaseCMAOptimizer):
 # ---  Experimental code below --- ##
 
 
-class NevergradOptimizer(BaseOptimizer):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.method = kwargs['method']
+class BaseNevergradOptimizer():
+    """
+    Base template for NeverGrad optimization. Should be used jointly with
+    BaseOptimizer.
+    """
+
+    def __init__(self, method):
+        """
+        Attribute:
+            inverted_loss
+                If inverted_loss is True, compute the loss on the original
+                target image. If False, use the last iterate loss. Setting
+                this to True may result in better result but slightly slower
+                run-time.
+        """
+        self.inverted_loss = True
+        self.method = method
         self.valid_methods = [x[0] for x in ng.optimizers.registry.items()]
         self.sequential_methods = ['SQPCMA', 'chainCMAPowell', 'Powell']
         self.is_sequential = self.method in self.sequential_methods
@@ -337,8 +349,67 @@ class NevergradOptimizer(BaseOptimizer):
             'unknown nevergrad method: {}'.format(self.method)
         return
 
-    def optimize(self, var_manager, meta_steps, grad_steps=300,
-                 meta_dim=128, meta_init=None, pbar=None):
+    def setup_ng(self, budget, ng_dim=128, ng_init=None):
+        """
+        Args
+            ng_dim
+                Dimension of the NeverGrad optimizer
+            ng_init
+                ng_init can be a list or a tuple. If tuple (mu, sigma).
+                If cma_init is only mu, sigma is set to 1.0
+        """
+        opt_fn = ng.optimizers.registry[self.method]
+        if ng_init is None:
+            p = ng.p.Array(shape=(ng_dim,)).set_mutation(sigma=1.0)
+            opt = opt_fn(parametrization=p, budget=budget)
+        else:
+            p = ng.p.Array(init=ng_init[0]).set_mutation(sigma=meta_init[1])
+            opt = opt_fn(parametrization=p, budget=budget)
+        self.ng_opt = opt
+        return
+
+    def init_ng(self, var_manager, cma_var='z'):
+        if self.is_sequential:
+            variables = var_manager.init(num_seeds=1)
+        else:
+            variables = var_manager.init()
+
+        self._cma_var = \
+            [self.ng_opt.ask() for _ in range(len(variables.z.data))]
+        z = np.concatenate([np.array(x.args) for x in self._cma_var])
+        override_variables(variables, [['z', z]])
+        return variables
+
+    def update_ng(self, v, cma_var='z'):
+        if self.inverted_loss:
+            with torch.no_grad():
+                z, cv = torch.stack(v.z.data), torch.stack(v.cv.data)
+                out = self.model(z=z, c=cv)
+
+                if v.t is not None:
+                    t = torch.stack(v.t.data)
+                    out = self.transform_fn(out, t, invert=True)
+
+                mask = binarize(v.weight.data[0]).unsqueeze(0)
+                target = v.target.data[0].unsqueeze(0)
+                loss = self.loss_fn(out, target, mask).detach().cpu().numpy()
+
+                for z, l in zip(self._cma_var, loss):
+                    self.ng_opt.tell(z, l)
+        else:
+            for z, l in zip(self._cma_var, self.loss):
+                self.ng_opt.tell(z, l)
+        return
+
+
+class NevergradOptimizer(BaseOptimizer, BaseNevergradOptimizer):
+    def __init__(self, *args, **kwargs):
+        BaseOptimizer.__init__(self, *args, **kwargs)
+        BaseNevergradOptimizer.__init__(self, method=kwargs['method'])
+        return
+
+    def optimize(self, var_manager, meta_steps, grad_steps=300, ng_dim=128,
+                 ng_init=None, pbar=None):
         """
         Args
             var_manager:
@@ -349,39 +420,24 @@ class NevergradOptimizer(BaseOptimizer):
             grad_steps:
                 number of gradient updates to apply after gradient-free
                 optimization.
-            meta_dim:
+            ng_dim:
                 dimension of the variable to optimize using gradient-free
                 optimizer.
-            meta_init:
+            ng_init:
                 initialize nevergrad optimizer with the provided mean
                 (optional: mean and sigma)
             pbar:
                 progress bar such as tqdm or st.progress
         """
         # -- Setup optimizer -- #
-        opt_fn = ng.optimizers.registry[self.method]
-        if meta_init is None:
-            p = ng.p.Array(shape=(meta_dim,)).set_mutation(sigma=1.0)
-            opt = opt_fn(parametrization=p, budget=meta_steps + 1)
-        else:
-            p = ng.p.Array(meta_init[0]).set_mutation(sigma=meta_init[1])
-            opt = opt_fn(parametrization=p, budget=meta_steps + 1)
+        self.setup_ng(meta_steps + 1, ng_dim, ng_init)
 
         total_steps = meta_steps + grad_steps
         self.losses, self.outs, i = [], [], 0
 
         # -- Start optimization -- #
         for _ in range(meta_steps):
-            if self.is_sequential:
-                variables = var_manager.init(num_seeds=1)
-                _z = opt.ask()
-                z = np.array(_z.args)
-            else:
-                variables = var_manager.init()
-                _z = [opt.ask() for _ in range(var_manager.num_seeds)]
-                z = np.concatenate([np.array(x.args) for x in _z])
-
-            override_variables(variables, [['z', z]])  # 18 seeds
+            variables = self.init_ng(var_manager)
             self.step(variables, optimize=False)
             i += 1
 
@@ -389,11 +445,7 @@ class NevergradOptimizer(BaseOptimizer):
                 if ((i + 1) % self.log_iter == 0) or (i + 1 == grad_steps):
                     self.log_result(variables, i + 1)
 
-            if self.is_sequential:
-                opt.tell(_z, self.loss[0])
-            else:
-                for z, l in zip(_z, self.loss):
-                    opt.tell(z, l)
+            self.update_ng(variables)
 
             if pbar is not None:
                 pbar.progress(i / total_steps)
@@ -402,10 +454,7 @@ class NevergradOptimizer(BaseOptimizer):
                     progress_print('optimize', i + 1, meta_steps, 'c')
 
         # -- Finetune the final seeds with ADAM -- #
-        variables = var_manager.init()
-        _z = [opt.ask() for _ in range(var_manager.num_seeds)]
-        z = np.concatenate([np.array(x.args) for x in _z])
-        override_variables(variables, [['z', z]])
+        variables = self.init_ng(var_manager)
 
         for _ in range(grad_steps):
             self.step(variables, optimize=True)
@@ -426,22 +475,14 @@ class NevergradOptimizer(BaseOptimizer):
         return variables, self.out, self.loss
 
 
-class NevergradHybridOptimizer(BaseOptimizer):
+class NevergradHybridOptimizer(BaseOptimizer, BaseNevergradOptimizer):
     def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.method = kwargs['method']
-        self.valid_methods = [x[0] for x in ng.optimizers.registry.items()]
-        self.sequential_methods = ['SQPCMA', 'chainCMAPowell', 'Powell']
-        self.is_sequential = self.method in self.sequential_methods
-        if self.is_sequential:
-            seq_msg = '{} is a sequential method. batch size is set to 1'
-            cprint(seq_msg.format(self.method), 'y')
-        assert self.method in self.valid_methods, \
-            'unknown nevergrad method: {}'.format(self.method)
+        BaseOptimizer.__init__(self, *args, **kwargs)
+        BaseNevergradOptimizer.__init__(self, method=kwargs['method'])
         return
 
     def optimize(self, var_manager, meta_steps, grad_steps,
-                 finetune_grad_steps=300, meta_dim=128, meta_init=None,
+                 finetune_grad_steps=300, ng_dim=128, ng_init=None,
                  pbar=None):
         """
         Args
@@ -455,10 +496,10 @@ class NevergradHybridOptimizer(BaseOptimizer):
             finetune_grad_steps:
                 after the final iteration of nevergrad, further optimize the
                 last drawn samples using gradient descent.
-            meta_dim:
+            ng_dim:
                 dimension of the variable to optimize using gradient-free
                 optimizer.
-            meta_init:
+            ng_init:
                 initialize nevergrad optimizer with the provided mean
                 (optional: mean and sigma)
             pbar:
@@ -466,33 +507,17 @@ class NevergradHybridOptimizer(BaseOptimizer):
         """
 
         # -- Setup optimizer -- #
-        opt_fn = ng.optimizers.registry[self.method]
-        if meta_init is None:
-            p = ng.p.Array(shape=(meta_dim,)).set_mutation(sigma=1.0)
-            opt = opt_fn(parametrization=p, budget=meta_steps + 1)
-        else:
-            p = ng.p.Array(init=meta_init[0]).set_mutation(sigma=meta_init[1])
-            opt = opt_fn(parametrization=p, budget=meta_steps + 1)
+        self.setup_ng(meta_steps + 1, ng_dim, ng_init)
 
         self.losses, self.outs, i = [], [], 0
         total_steps = meta_steps * grad_steps + finetune_grad_steps
 
         # -- Start optimization -- #
         for meta_iter in range(meta_steps + 1):
-            if self.is_sequential:
-                variables = var_manager.init(num_seeds=1)
-                _z = opt.ask()
-                z = np.array(_z.args)
-            else:
-                variables = var_manager.init()
-                _z = [opt.ask() for _ in range(var_manager.num_seeds)]
-                z = np.concatenate([np.array(x.args) for x in _z])
-
-            override_variables(variables, [['z', z]])
+            variables = self.init_ng(var_manager)
 
             is_last_iter = (meta_iter == meta_steps)
             _grad_steps = finetune_grad_steps if is_last_iter else grad_steps
-
             for _ in range(_grad_steps):
                 self.step(variables, optimize=True)
                 i += 1
@@ -510,12 +535,7 @@ class NevergradHybridOptimizer(BaseOptimizer):
                     if (i + 1) % self.show_iter == 0:
                         progress_print('optimize', i + 1, total_steps, 'c')
 
-            if self.is_sequential:
-                opt.tell(_z, self.loss[0])
-            else:
-                for z, l in zip(_z, self.loss):
-                    opt.tell(z, l)
-
+            self.update_ng(variables)
         if self.log:
             return variables, self.outs, self.losses
         return variables, self.out, self.loss

@@ -240,7 +240,7 @@ class TransformableBasinCMAProjection():
         # -- Optimizer -- #
         if num_seeds == 18:
             opt = optimizers.BasinCMAOptimizer(
-                model=self.model,
+                self.model,
                 max_batch_size=max_batch_size,
                 log=log,
             )
@@ -249,8 +249,8 @@ class TransformableBasinCMAProjection():
             # Note:
             # This performs worse than CMA implementation above.
             opt = optimizers.NevergradHybridOptimizer(
+                self.model,
                 method='CMA',
-                model=self.model,
                 max_batch_size=max_batch_size,
                 log=log,
             )
