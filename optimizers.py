@@ -363,7 +363,7 @@ class BaseNevergradOptimizer():
             p = ng.p.Array(shape=(ng_dim,)).set_mutation(sigma=1.0)
             opt = opt_fn(parametrization=p, budget=budget)
         else:
-            p = ng.p.Array(init=ng_init[0]).set_mutation(sigma=meta_init[1])
+            p = ng.p.Array(init=ng_init[0]).set_mutation(sigma=ng_init[1])
             opt = opt_fn(parametrization=p, budget=budget)
         self.ng_opt = opt
         return
