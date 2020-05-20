@@ -11,6 +11,7 @@ import numpy as np
 from nltk.corpus import wordnet
 import warnings
 from dataset_misc import *
+nltk.download('wordnet')
 
 
 def query_subclass_by_name(query_noun='dog', verbose=True):
