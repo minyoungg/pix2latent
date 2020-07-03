@@ -1,7 +1,7 @@
-@article{huh2020ganprojection,
-    title = {Aligning and Projecting Images to Class-conditional Generative Networks}
-    author = {Huh, Minyoung and Zhang, Richard and Zhu, Jun-Yan
-              and Paris, Sylvain and Hertzmann, Aaron},
-    booktitle={arXiv preprint arXiv},
-    year = {2020}
+@inproceedings{huh2020ganprojection,
+    title={Aligning and Projecting Images to Class-conditional Generative Networks}
+    author={Huh, Minyoung and Zhang, Richard and Zhu, Jun-Yan
+            and Paris, Sylvain and Hertzmann, Aaron},
+    booktitle={ECCV},
+    year={2020}
 }
