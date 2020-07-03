@@ -85,11 +85,11 @@ We support simple spatial affine transformation and various color transformation
 
 If you found our work useful, please cite using
 ```
-@article{huh2020ganprojection,
-    title = {Transforming and Projecting Images to Class-conditional Generative Networks},
-    author = {Huh, Minyoung and Zhang, Richard and Zhu, Jun-Yan
-              and Paris, Sylvain and Hertzmann, Aaron},
-    article={arXiv preprint arXiv},
-    year = {2020}
+@inproceedings{huh2020ganprojection,
+    title={Transforming and Projecting Images to Class-conditional Generative Networks},
+    author={Huh, Minyoung and Zhang, Richard and Zhu, Jun-Yan
+            and Paris, Sylvain and Hertzmann, Aaron},
+    booktitle={ECCV},
+    year={2020}
 }
 ```
