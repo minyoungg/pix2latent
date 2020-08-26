@@ -99,6 +99,9 @@ var_man = VariableManager()
 | `pix2latent.optimizer.GradientOptimizer` | gradient-based optimizer. defaults to optimizer defined in `pix2latent.VariableManager`|
 | `pix2latent.optimizer.CMAOptimizer` | uses CMA optimization to search over latent variables `z`|
 | `pix2latent.optimizer.BasinCMAOptimizer` | uses BasinCMA optimization. a combination of CMA and gradient-based optimization|
+| `pix2latent.optimizer.NevergradOptimizer` | uses [`Nevergrad`](https://github.com/facebookresearch/nevergrad) library for optimization. supports most gradient-free optimization method implemented in [`Nevergrad`](https://github.com/facebookresearch/nevergrad) |
+| `pix2latent.optimizer.HybridNevergradOptimizer` | uses hybrid optimization by alternating gradient and gradient-free optimization provided by [`Nevergrad`](https://github.com/facebookresearch/nevergrad)|
+
 
 #### `pix2latent.transform`
 | Command | Description |
