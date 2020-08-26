@@ -3,7 +3,7 @@
 Framework for inverting images. Codebase used in:
 
 **Transforming and Projecting Images into Class-conditional Generative Networks**  
-**[project page](https://minyoungg.github.io/GAN-Transform-and-Project/) |   [paper](http://arxiv.org/abs/2005.01703)**     
+**[project page](https://minyoungg.github.io/pix2latent/) |   [paper](http://arxiv.org/abs/2005.01703)**     
 [Minyoung Huh](http://minyounghuh.com/) &nbsp; [Richard Zhang](https://richzhang.github.io/) &nbsp; [Jun-Yan Zhu](https://people.csail.mit.edu/junyanz/) &nbsp; [Sylvain Paris](http://people.csail.mit.edu/sparis/) &nbsp; [Aaron Hertzmann](https://www.dgp.toronto.edu/~hertzman/)  
 MIT CSAIL &nbsp; Adobe Research  
 **ECCV 2020 (oral)**
