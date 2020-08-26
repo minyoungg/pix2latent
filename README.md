@@ -1,11 +1,12 @@
 # pix2latent: framework for inverting images into generative models
 
-Flexible framework for inverting images used in:
+Framework for inverting images. Codebase used in:
 
 **Transforming and Projecting Images into Class-conditional Generative Networks**  
-**[project page](https://minyoungg.github.io/GAN-Transform-and-Project/) |   [paper](http://arxiv.org/abs/2005.01703) | [original code]()**     
+**[project page](https://minyoungg.github.io/GAN-Transform-and-Project/) |   [paper](http://arxiv.org/abs/2005.01703)**     
 [Minyoung Huh](http://minyounghuh.com/) &nbsp; [Richard Zhang](https://richzhang.github.io/) &nbsp; [Jun-Yan Zhu](https://people.csail.mit.edu/junyanz/) &nbsp; [Sylvain Paris](http://people.csail.mit.edu/sparis/) &nbsp; [Aaron Hertzmann](https://www.dgp.toronto.edu/~hertzman/)  
 MIT CSAIL &nbsp; Adobe Research  
+**ECCV 2020 (oral)**
 
 ```
 @article{huh2020ganprojection,
@@ -15,6 +16,9 @@ MIT CSAIL &nbsp; Adobe Research
     year = {2020}
 }
 ```
+
+**NOTE [8/25/20]** The codebase has been renamed from `GAN-Transform-and-Project` to `pix2latent`, and also refactored to make it easier to use and extend to any generative model beyond `BigGAN`. To access the original codebase refer to the `legacy` branch. 
+
 
 ## Prerequisites
 The code was developed on
@@ -95,6 +99,9 @@ var_man = VariableManager()
 | `pix2latent.optimizer.GradientOptimizer` | gradient-based optimizer. defaults to optimizer defined in `pix2latent.VariableManager`|
 | `pix2latent.optimizer.CMAOptimizer` | uses CMA optimization to search over latent variables `z`|
 | `pix2latent.optimizer.BasinCMAOptimizer` | uses BasinCMA optimization. a combination of CMA and gradient-based optimization|
+| `pix2latent.optimizer.NevergradOptimizer` | uses [`Nevergrad`](https://github.com/facebookresearch/nevergrad) library for optimization. supports most gradient-free optimization method implemented in [`Nevergrad`](https://github.com/facebookresearch/nevergrad) |
+| `pix2latent.optimizer.HybridNevergradOptimizer` | uses hybrid optimization by alternating gradient and gradient-free optimization provided by [`Nevergrad`](https://github.com/facebookresearch/nevergrad)|
+
 
 #### `pix2latent.transform`
 | Command | Description |
