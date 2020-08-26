@@ -1,0 +1,14 @@
+cma>=3.0.3
+easydict>=1.9
+nevergrad>=0.4.0.post3
+nltk>=3.5
+numpy>=1.18.4
+Pillow>=7.1.2
+pytorch_pretrained_biggan>=0.1.1
+scipy>=1.4.1
+scikit-image>=0.0
+scikit-video>=1.1.11
+opencv-python>=4.2.0.34
+GitPython==3.1.7
+ipython>=7.14.0
+gdown>=3.12.2

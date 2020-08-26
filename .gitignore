@@ -1,0 +1,11 @@
+*.pyc
+*.jpg
+*.png
+*.mp4
+*.ckpt
+*.ipynb
+deprecated/
+dev_utils/
+examples/results
+__pycache__/
+.ipynb_checkpoints/
