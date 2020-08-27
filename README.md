@@ -3,13 +3,13 @@
 Framework for inverting images. Codebase used in:
 
 **Transforming and Projecting Images into Class-conditional Generative Networks**  
-**[project page](https://minyoungg.github.io/pix2latent/) |   [paper](http://arxiv.org/abs/2005.01703)**     
+**[project page](https://minyoungg.github.io/pix2latent/) |   [paper](http://people.csail.mit.edu/minhuh/papers/pix2latent/arxiv_v2.pdf)**     
 [Minyoung Huh](http://minyounghuh.com/) &nbsp; [Richard Zhang](https://richzhang.github.io/) &nbsp; [Jun-Yan Zhu](https://people.csail.mit.edu/junyanz/) &nbsp; [Sylvain Paris](http://people.csail.mit.edu/sparis/) &nbsp; [Aaron Hertzmann](https://www.dgp.toronto.edu/~hertzman/)  
 MIT CSAIL &nbsp; Adobe Research  
 **ECCV 2020 (oral)**
 
 ```
-@article{huh2020ganprojection,
+@inproceedings{huh2020ganprojection,
     title = {Transforming and Projecting Images to Class-conditional Generative Networks}
     author = {Minyoung Huh and Richard Zhang, Jun-Yan Zhu and Sylvain Paris and Aaron Hertzmann},
     booktitle = {ECCV},
@@ -55,13 +55,13 @@ Using the `make_video` flag will save the optimization trajectory as a video.
 > python invert_biggan_adam.py --make_video --num_samples 4
 ```
 
-To optimize with `CMA-ES` or `BasinCMA`, we use [PyCMA](https://github.com/CMA-ES/pycma). Note that the PyCMA version of CMA-ES has a predefined number of samples to jointly evaluate (18 for BigGAN) and (22 for StyleGAN2). 
+**(slow)** To optimize with `CMA-ES` or `BasinCMA`, we use [PyCMA](https://github.com/CMA-ES/pycma). Note that the PyCMA version of CMA-ES has a predefined number of samples to jointly evaluate (18 for BigGAN) and (22 for StyleGAN2). 
 ```bash
 > python invert_biggan_cma.py 
 > python invert_biggan_basincma.py 
 ```
 
-Alternatively CMA-ES in [Nevergrad](https://github.com/facebookresearch/nevergrad) provides sample parallelization so you can set your own number of samples. Although this runs faster, we have observed the performance to be slightly worse.
+**(fast)** Alternatively CMA-ES in [Nevergrad](https://github.com/facebookresearch/nevergrad) provides sample parallelization so you can set your own number of samples. Although this runs faster, we have observed the performance to be slightly worse. **(warning: performance depends on num_samples)**.
 ```bash
 > python invert_biggan_ng.py --ng_method CMA --num_samples 4
 > python invert_biggan_hybrid_ng.py --ng_method CMA --num_samples 4
