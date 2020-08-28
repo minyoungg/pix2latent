@@ -17,11 +17,17 @@ import pix2latent.distribution as dist
 
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--fp', type=str,
+                    default='./images/dog-example-153.jpg')
+parser.add_argument('--mask_fp', type=str,
+                    default='./images/dog-example-153-mask.jpg')
+parser.add_argument('--class_lbl', type=int, default=153)
 parser.add_argument('--lr', type=float, default=0.05)
 parser.add_argument('--latent_noise', type=float, default=0.05)
 parser.add_argument('--truncate', type=float, default=2.0)
-parser.add_argument('--max_minibatch', type=int, default=9)
 parser.add_argument('--make_video', action='store_true')
+parser.add_argument('--max_minibatch', type=int, default=9)
+parser.add_argument('--num_samples', type=int, default=9)
 args = parser.parse_args()
 
 
@@ -37,17 +43,13 @@ var_manager = VariableManager()
 # (3) default l1 + lpips loss function
 loss_fn = LF.ProjectionLoss()
 
-filename = './images/dog-example-153.jpg'
-mask_filename = './images/dog-example-153-mask.jpg'
+
+target = image.read(args.fp, as_transformed_tensor=True, im_size=256)
+weight = image.read(args.mask_fp, as_transformed_tensor=True, im_size=256)
+weight = ((weight + 1.) / 2.).clamp_(0.3, 1.0)
 class_lbl = 153
 
-target = image.read(filename, as_transformed_tensor=True, im_size=256,
-                    transform_style='biggan')
-weight = image.read(mask_filename, as_transformed_tensor=True, im_size=256,
-                    transform_style='biggan')
-weight = ((weight + 1.) / 2.).clamp_(0.3, 1.0)
-
-fn = filename.split('/')[-1].split('.')[0]
+fn = args.fp.split('/')[-1].split('.')[0]
 save_dir = f'./results/biggan_256/cma_{fn}'
 
 var_manager = VariableManager()
@@ -67,9 +69,7 @@ var_manager.register(
                                 ),
             var_type='input',
             learning_rate=args.lr,
-            hook_fn=hook.Compose(
-                        hook.Normalize(),
-                        )
+            hook_fn=hook.Clamp(args.truncate),
             )
 
 var_manager.register(

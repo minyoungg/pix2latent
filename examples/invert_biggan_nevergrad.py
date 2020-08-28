@@ -5,10 +5,10 @@ import argparse
 import torch
 import torch.nn as nn
 
-from biggan import BigGAN
+from pix2latent.model.biggan import BigGAN
 
 from pix2latent import VariableManager, save_variables
-from pix2latent.optimizer import NevergradOptimizer, HybridNevergradOptimizer
+from pix2latent.optimizer import NevergradOptimizer
 from pix2latent.utils import image, video
 
 import pix2latent.loss_functions as LF
@@ -17,13 +17,18 @@ import pix2latent.distribution as dist
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--method', type=str, required=True,
-                    choices=['gradfree', 'hybrid'])
+parser.add_argument('--fp', type=str,
+                    default='./images/dog-example-153.jpg')
+parser.add_argument('--mask_fp', type=str,
+                    default='./images/dog-example-153-mask.jpg')
+parser.add_argument('--class_lbl', type=int, default=153)
 parser.add_argument('--ng_method', type=str, default='CMA')
 parser.add_argument('--lr', type=float, default=0.05)
 parser.add_argument('--latent_noise', type=float, default=0.05)
 parser.add_argument('--truncate', type=float, default=2.0)
 parser.add_argument('--make_video', action='store_true')
+parser.add_argument('--max_minibatch', type=int, default=9)
+parser.add_argument('--num_samples', type=int, default=9)
 args = parser.parse_args()
 
 
@@ -39,17 +44,14 @@ var_manager = VariableManager()
 # (3) default l1 + lpips loss function
 loss_fn = LF.ProjectionLoss()
 
-filename = './images/dog_182_n02093754_5756.jpg'
-mask_filename = './images/dog_182_n02093754_5756_mask.jpg'
-class_lbl = 182
 
-target = image.read(filename, as_transformed_tensor=True, im_size=256)
-weight = image.read(mask_filename, as_transformed_tensor=True, im_size=256)
+target = image.read(args.fp, as_transformed_tensor=True, im_size=256)
+weight = image.read(args.mask_fp, as_transformed_tensor=True, im_size=256)
 weight = ((weight + 1.) / 2.).clamp_(0.3, 1.0)
 
-save_dir = './results/biggan_256/{}_{}_lr_{}_noise_{}_trunc_{}'.format(
-                    'nevergrad', filename.split('/')[-1].split('.')[0],
-                    args.lr, args.latent_noise, args.truncate)
+
+fn = args.fp.split('/')[-1].split('.')[0]
+save_dir = f'./results/biggan_256/ng_{fn}'
 
 
 var_manager = VariableManager()
@@ -62,21 +64,21 @@ loss_fn = LF.ProjectionLoss()
 var_manager.register(
             variable_name='z',
             shape=(128,),
+            grad_free=True,
             distribution=dist.TruncatedNormalModulo(
                                 sigma=1.0,
                                 trunc=args.truncate
                                 ),
             var_type='input',
             learning_rate=args.lr,
-            grad_free=True,
-            hook_fn=hook.Clamp(args.truncate)
+            hook_fn=hook.Clamp(args.truncate),
             )
 
 var_manager.register(
             variable_name='c',
             shape=(128,),
             requires_grad=True,
-            default=model.get_class_embedding(class_lbl)[0],
+            default=model.get_class_embedding(args.class_lbl)[0],
             var_type='input',
             learning_rate=0.01,
             )
@@ -100,26 +102,14 @@ var_manager.register(
 
 ### ---- optimize --- ###
 
-if args.method == 'gradfree':
-    opt = NevergradOptimizer(
-             args.ng_method, model, var_manager, loss_fn,
-             max_batch_size=9, log=args.make_video
-             )
+opt = NevergradOptimizer(
+         args.ng_method, model, var_manager, loss_fn,
+         max_batch_size=args.max_minibatch,
+         log=args.make_video
+         )
 
-    vars, out, loss = opt.optimize(
-            num_samples=1, meta_steps=1000, grad_steps=300
-            )
-
-
-elif args.method == 'hybrid':
-    opt = HybridNevergradOptimizer(
-            args.ng_method, model, var_manager, loss_fn,
-            max_batch_size=9, log=args.make_video
-            )
-
-    vars, out, loss = opt.optimize(
-            num_samples=1, meta_steps=30, grad_steps=50, last_grad_steps=300
-            )
+vars, out, loss = \
+    opt.optimize(num_samples=args.num_samples, meta_steps=1000, grad_steps=300)
 
 
 ### ---- save results ---- #
