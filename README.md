@@ -1,5 +1,4 @@
 # pix2latent: framework for inverting images into generative models
-
 Framework for inverting images. Codebase used in:
 
 **Transforming and Projecting Images into Class-conditional Generative Networks**  
@@ -7,6 +6,8 @@ Framework for inverting images. Codebase used in:
 [Minyoung Huh](http://minyounghuh.com/) &nbsp; [Richard Zhang](https://richzhang.github.io/) &nbsp; [Jun-Yan Zhu](https://people.csail.mit.edu/junyanz/) &nbsp; [Sylvain Paris](http://people.csail.mit.edu/sparis/) &nbsp; [Aaron Hertzmann](https://www.dgp.toronto.edu/~hertzman/)  
 MIT CSAIL &nbsp; Adobe Research  
 **ECCV 2020 (oral)**
+
+![](./assets/overview.gif)
 
 ```
 @inproceedings{huh2020ganprojection,
@@ -18,6 +19,20 @@ MIT CSAIL &nbsp; Adobe Research
 ```
 
 **NOTE [8/25/20]** The codebase has been renamed from `GAN-Transform-and-Project` to `pix2latent`, and also refactored to make it easier to use and extend to any generative model beyond `BigGAN`. To access the original codebase refer to the `legacy` branch. 
+
+# Example results
+
+<p align="center"><b> BigGAN - ImageNet (256x256) </b></p>
+
+![](./assets/biggan_comparison.png)
+
+<p align="center"><b> StyleGAN2 - LSUN Cars (384x512) </b></p>
+
+![](./assets/stylegan2_cars.png)
+
+<p align="center"><b> StyleGAN2 - FFHQ (1024x1024) </b></p>
+
+![](./assets/stylegan2_ffhq.png)
 
 
 ## Prerequisites
@@ -63,13 +78,46 @@ Using the `make_video` flag will save the optimization trajectory as a video.
 
 **(fast)** Alternatively CMA-ES in [Nevergrad](https://github.com/facebookresearch/nevergrad) provides sample parallelization so you can set your own number of samples. Although this runs faster, we have observed the performance to be slightly worse. **(warning: performance depends on num_samples)**.
 ```bash
-> python invert_biggan_ng.py --ng_method CMA --num_samples 4
-> python invert_biggan_hybrid_ng.py --ng_method CMA --num_samples 4
+> python invert_biggan_nevergrad.py --ng_method CMA --num_samples 4
+> python invert_biggan_hybrid_nevergrad.py --ng_method CMA --num_samples 4
 ```
 
 Same applies to `StyleGAN2`. See `./examples/` for extensive list of examples.
 
-## Usage
+
+### Pseudocode
+```python
+import torch, torch.nn as nn
+import pix2latent.VariableManger as vm
+from pix2latent.optimizer import GradientOptimizer
+
+# load your favorite model
+class Generator(nn.Module):
+    ...
+    
+    def forward(self, z):
+        ...
+        return im
+
+model = Generator() 
+
+# define your loss objective .. or use the predefined loss functions in pix2latent.loss_functions
+loss_fn = lambda out, target: (target - out).abs().mean()
+
+# tell the optimizer what the input-output relationship is
+vm.register(variable_name='z', shape=(128,), var_type='input')
+vm.register(variable_name='target', shape(3, 256, 256), var_type='output')
+
+# setup optimizer
+opt = GradientOptimizer(model, vm, loss_fn)
+
+# optimize
+vars, out, loss = opt.optimize(num_samples=1, grad_steps=500)
+
+```
+
+
+### detailed usage
 
 #### `pix2latent`
 
