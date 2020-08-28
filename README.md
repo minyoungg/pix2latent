@@ -22,15 +22,15 @@ MIT CSAIL &nbsp; Adobe Research
 
 # Example results
 
-<p align="center"><b> BigGAN - ImageNet (256x256) </b></p>
+<p align="center"><b> BigGAN (z-space) - ImageNet (256x256) </b></p>
 
 ![](./assets/biggan_comparison.png)
 
-<p align="center"><b> StyleGAN2 - LSUN Cars (384x512) </b></p>
+<p align="center"><b> StyleGAN2 (z-space) - LSUN Cars (384x512) </b></p>
 
 ![](./assets/stylegan2_cars.png)
 
-<p align="center"><b> StyleGAN2 - FFHQ (1024x1024) </b></p>
+<p align="center"><b> StyleGAN2 (z-space) - FFHQ (1024x1024) </b></p>
 
 ![](./assets/stylegan2_ffhq.png)
 
