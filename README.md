@@ -21,6 +21,7 @@ MIT CSAIL &nbsp; Adobe Research
 **NOTE [8/25/20]** The codebase has been renamed from `GAN-Transform-and-Project` to `pix2latent`, and also refactored to make it easier to use and extend to any generative model beyond `BigGAN`. To access the original codebase refer to the `legacy` branch. 
 
 # Example results
+<b>All results below are without fine-tuning.</b>
 
 <p align="center"><b> BigGAN (z-space) - ImageNet (256x256) </b></p>
 
@@ -85,10 +86,10 @@ Using the `make_video` flag will save the optimization trajectory as a video.
 Same applies to `StyleGAN2`. See `./examples/` for extensive list of examples.
 
 
-### Pseudocode
+### Template pseudocode
 ```python
 import torch, torch.nn as nn
-import pix2latent.VariableManger as vm
+import pix2latent.VariableManger
 from pix2latent.optimizer import GradientOptimizer
 
 # load your favorite model
@@ -105,6 +106,7 @@ model = Generator()
 loss_fn = lambda out, target: (target - out).abs().mean()
 
 # tell the optimizer what the input-output relationship is
+vm = VariableManager()
 vm.register(variable_name='z', shape=(128,), var_type='input')
 vm.register(variable_name='target', shape(3, 256, 256), var_type='output')
 
