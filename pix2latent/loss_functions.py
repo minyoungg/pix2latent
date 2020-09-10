@@ -134,7 +134,7 @@ class PerceptualLoss(nn.Module):
             self.loss_fn = self.loss_fn.cuda()
 
         # current pip version does not support DataParallel
-        #self.loss_fn = nn.DataParallel(self.loss_fn)
+        # self.loss_fn = nn.DataParallel(self.loss_fn)
         return
 
     def __call__(self, output, target, weight=None, loss_mask=None):

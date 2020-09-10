@@ -12,3 +12,4 @@ opencv-python>=4.2.0.34
 GitPython==3.1.7
 ipython>=7.14.0
 gdown>=3.12.2
+lpips>=0.1
