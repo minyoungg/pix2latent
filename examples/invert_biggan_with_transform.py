@@ -59,7 +59,6 @@ save_dir = f'./results/biggan_256/{args.method}_{fn}_w_transform'
 
 
 var_manager = VariableManager()
-loss_fn = LF.ProjectionLoss()
 
 
 # (4) define input output variable structure. the variable name must match

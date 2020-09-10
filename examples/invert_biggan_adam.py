@@ -54,7 +54,6 @@ save_dir = f'./results/biggan_256/adam_{fn}'
 
 
 var_manager = VariableManager()
-loss_fn = LF.ProjectionLoss()
 
 
 # (4) define input output variable structure. the variable name must match

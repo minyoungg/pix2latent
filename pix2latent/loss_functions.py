@@ -11,6 +11,9 @@ import traceback
 
 import torch
 from torch import nn
+
+import lpips
+
 from pix2latent.utils.misc import HiddenPrints
 
 
@@ -122,54 +125,24 @@ class ReconstructionLoss(nn.Module):
 
 
 class PerceptualLoss(nn.Module):
-    def __init__(self, net='vgg', use_gpu=True, lpips_dir=None):
+    def __init__(self, net='vgg', use_gpu=True):
         """ LPIPS loss with spatial weighting """
         super(PerceptualLoss, self).__init__()
-        lpips_dir = self.download(lpips_dir=lpips_dir)
+        self.loss_fn = lpips.LPIPS(net=net, spatial=True)
 
-        # consider removing from path  after importing
-        sys.path.insert(1, lpips_dir)
+        if use_gpu:
+            self.loss_fn = self.loss_fn.cuda()
 
-        with HiddenPrints():
-            import models
-            self.lpips = models.PerceptualLoss(model='net-lin',
-                                               net=net,
-                                               spatial=True,
-                                               use_gpu=use_gpu)
-
-        self.lpips = nn.DataParallel(self.lpips).cuda()
+        # current pip version does not support DataParallel
+        #self.loss_fn = nn.DataParallel(self.loss_fn)
         return
 
     def __call__(self, output, target, weight=None, loss_mask=None):
-        """ ims have dimension BCHW while mask is 1HW """
         # lpips takes the sum of each spatial map
-        loss = self.lpips(output, target)
+        loss = self.loss_fn(output, target)
         if weight is not None:
             _weight = weight if loss_mask == None else (loss_mask * weight)
             n = torch.sum(loss * _weight, [1, 2, 3])
             d = torch.sum(_weight, [1, 2, 3])
             loss = n / d
         return loss
-
-    def download(self, lpips_dir=None):
-        """ https://github.com/richzhang/PerceptualSimilarity """
-        from git import Repo
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        git_url = "https://github.com/richzhang/PerceptualSimilarity"
-
-        if lpips_dir is None:
-            lpips_dir = osp.join(dir_path, 'PerceptualSimilarity')
-
-        if not osp.exists(lpips_dir):
-            print('Could not find LPIPS .. cloning from git')
-
-            try:
-                print(f'cloning `{git_url}` to `{lpips_dir}`')
-                Repo.clone_from(git_url, lpips_dir)
-
-            except Exception as e:
-                logging.error(traceback.format_exc())
-                print('Failed to clone the repo. Download it manually ' + \
-                      'and set the path with `lpips_dir` argument.')
-
-        return lpips_dir
