@@ -11,7 +11,7 @@ MIT CSAIL &nbsp; Adobe Research
 
 ```
 @inproceedings{huh2020ganprojection,
-    title = {Transforming and Projecting Images to Class-conditional Generative Networks}
+    title = {Transforming and Projecting Images to Class-conditional Generative Networks},
     author = {Minyoung Huh and Richard Zhang, Jun-Yan Zhu and Sylvain Paris and Aaron Hertzmann},
     booktitle = {ECCV},
     year = {2020}
